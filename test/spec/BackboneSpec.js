@@ -24,7 +24,33 @@ describe("Stretchr-Backbone", function() {
 		},
 
 		updateObject: {
+			"~changes":{
+				"~replaced":1,
+				"~deltas": {
+					"~updated" : 1234
+				}
+			},
+			"~status":200
+		},
 
+		createObject: {
+			"~changes":
+			{
+			    "~created":1,
+			    "~deltas":[{"~id":"asdf", "~created":1234, "~updated":1234}]
+			},
+			"~status":201
+		},
+
+		deleteObject: {
+			"~changes":{
+				"~deleted":1
+			},
+			"~status":200
+		},
+
+		errorResponse: {
+			"~status":404
 		}
 	}
 
@@ -84,6 +110,111 @@ describe("Stretchr-Backbone", function() {
 		expect(stretchr.requests[0].path).toEqual("collection");
 		expect(collection.size()).toEqual(2);
 		expect(collection.models[0].get("field")).toEqual("value");
+	});
+
+	it("Should let me update an object", function() {
+		stretchr.respond(responses.updateObject);
+		model.stretchr = stretchr;
+		model.urlRoot = "collection";
+		model.id = "asdf";
+		model.set("name", "ryan");
+		model.save();
+
+		expect(stretchr.requests[0].action).toEqual("update");
+		expect(stretchr.requests[0].path).toEqual("collection/asdf");
+		expect(model.get("~updated")).toEqual(1234);
+	});
+
+	it("Should let me create an object inside collection", function() {
+		stretchr.respond(responses.createObject);
+		collection.stretchr = stretchr;
+		collection.url = "collection";
+		collection.create({name: "ryan"});
+
+		expect(stretchr.requests[0].action).toEqual("create");
+		expect(stretchr.requests[0].path).toEqual("collection");
+		expect(collection.models[0].get("~created")).toEqual(1234);
+	});
+
+	it("Should let me delete an object", function() {
+		stretchr.respond(responses.deleteObject);
+		model.stretchr = stretchr;
+		model.urlRoot = "collection";
+		model.id = "asdf";
+		model.set("name", "ryan");
+		model.destroy();
+
+		expect(stretchr.requests[0].action).toEqual("remove");
+		expect(stretchr.requests[0].path).toEqual("collection/asdf");
+	});
+
+	it("Should fire all the correct events for read", function() {
+		//TODO : Check events fired for both collections and models, make sure that request, sync, remove/add, etc... are all fired
+		stretchr.respond(responses.readSingleObject);
+		model.stretchr = stretchr;
+		model.urlRoot = "collection";
+		model.id = "asdf";
+
+		var request, sync;
+
+		model.on("request", function() {
+			request = 1;
+		});
+		model.on("sync", function() {
+			sync = 1;
+		});
+
+		model.fetch();
+
+		expect(request).toEqual(1);
+		expect(sync).toEqual(1);
+	});
+
+	it("Should fire an error event on errors", function() {
+		stretchr.respond(responses.errorResponse);
+		model.stretchr = stretchr;
+		model.urlRoot = "collection";
+		model.id = "asdf";
+
+		var error;
+
+		model.on("error", function() {
+			error = 1;
+		});
+
+		model.fetch();
+
+		expect(error).toEqual(1);
+	});
+
+	it("Should not fire an error when no error", function() {
+		stretchr.respond(responses.readSingleObject);
+		model.stretchr = stretchr;
+		model.urlRoot = "collection";
+		model.id = "asdf";
+
+		var error;
+
+		model.on("error", function() {
+			error = 1;
+		});
+
+		model.fetch();
+
+		expect(error).toBeUndefined();
+	});
+
+	xit("Should call update from within a collection", function() {
+		stretchr.respond(responses.updateObject);
+		collection.stretchr = stretchr;
+		collection.url = "collection";
+		collection.add([{name: "ryan", id: "asdf"}])
+		collection.sync();
+
+		expect(collection.size()).toEqual(1);
+		expect(stretchr.requests[0].action).toEqual("update");
+		expect(stretchr.requests[0].path).toEqual("collection/asdf");
+		expect(collection.models[0].get("~updated")).toEqual(1234);
 	});
 
 });

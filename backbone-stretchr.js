@@ -21,9 +21,11 @@ Backbone.Stretchr = function() {
 			}
 
 			if (this[method]) {
+				model.trigger("request", model, null, options);
 				this[method](model, function(err, res) {
 					if (err) {
-						//TODO : Handle the error!
+						//TODO : Right now this just returns the raw response in the event of an error, not very useful
+						model.trigger("error", err);
 					} else {
 						data = res;
 						model.trigger("sync", model, data, options);
@@ -64,25 +66,39 @@ Backbone.Stretchr = function() {
 
 		update: function(model, callback) {
 			//call an actual update, b/c we want to delete fields if they aren't part of it any longer
-			stretchr.at(url).body(model.parameters).update(function(response) {
-				res = response;
+			stretchr.at(model.url()).body(model.parameters).update(function(response) {
+				if (response["~status"] == 200) {
+					callback(null, response["~changes"]["~deltas"]);
+				} else {
+					callback(response);
+				}
 			});
 		},
 
 		create: function(model, callback) {
-			var res;
-			stretchr.at(url).body(model.parameters).create(function(response) {
-				res = response;
+			stretchr.at(model.url()).body(model.parameters).create(function(response) {
+				if (response["~status"] == 201) {
+					if (response["~changes"]["~deltas"] instanceof Array) {
+						//TODO : Handle creating multiple at once
+						callback(null, response["~changes"]["~deltas"][0])
+					} else {
+						//not an array
+						callback(null, response["~changes"]["~deltas"])
+					}
+				} else {
+					callback(response);
+				}
 			});
-			return res;
 		},
 
-		destroy: function(model, callback) {
-			var res;
-			stretchr.at(url).remove(function(response) {
-				res = response;
+		delete: function(model, callback) {
+			stretchr.at(model.url()).remove(function(response) {
+				if (response["~status"] == 200 && response["~deleted"] == 1) {
+					callback();
+				} else {
+					callback(response);
+				}
 			});
-			return res;
 		}
 	}
 }()
