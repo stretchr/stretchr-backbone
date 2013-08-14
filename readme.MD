@@ -30,3 +30,19 @@ var Model = Backbone.Model.extend({
 	stretchr: stretchr
 });
 ```
+
+## Setting Params
+
+```
+var Collection = Backbone.Collection.extend({
+	stretchr: stretchr,
+	stretchrParams: {
+		"include" : "~parent",
+		"offset" : 200,
+		":name" : ["Ryan", "Mat"],
+		":age" : ">21",
+		"versioning" : true
+	}
+
+});
+```
