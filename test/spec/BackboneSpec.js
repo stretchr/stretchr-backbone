@@ -210,7 +210,7 @@ describe("Stretchr-Backbone", function() {
 		collection.stretchrParams = {"include" : "~parent", "offset" : 100, ":age" : ">21", ":name" : ["Ryan", "Mat"] };
 		collection.url = "collection";
 		collection.fetch();
-		console.log(stretchr.requests);
+
 		expect(stretchr.requests[0].params.offset[0]).toEqual(100);
 		expect(stretchr.requests[0].params.include[0]).toEqual("~parent");
 		expect(stretchr.requests[0].params[":age"][0]).toEqual(">21");
