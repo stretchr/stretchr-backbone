@@ -41,7 +41,24 @@ Backbone.Stretchr = function() {
 		},
 
 		read: function(model, callback) {
-			stretchr.at(model.url()).read(function(response) {
+			//process params and add them to the request if provided
+			var req = stretchr.at(model.url());
+			if (model.stretchrParams) {
+				_.each(model.stretchrParams, function(value, key) {
+					// NOTE : This may need to be changed to set.  set replaces, params adds to an array
+					//handle arrays
+					if (value instanceof Array) {
+						for (var i in value) {
+							req.param(key, value[i]);
+						}
+					} else {
+						req.param(key, value);
+					}
+				});
+			}
+
+			//params are processed, now let's make the request
+			req.read(function(response) {
 				if (response["~status"] == "200") {
 					//success
 					callback(null, response["~data"]);
@@ -53,8 +70,26 @@ Backbone.Stretchr = function() {
 		},
 
 		readAll: function(model, callback) {
-			//in this case, model will always be null
-			stretchr.at(model.url).readAll({onCompleted: function(response) {
+			//process params and add them to the request if provided
+			// FIXME : readAll will overwrite some params it doesn't think it needs, like limit, to be most optimal.
+			// May want to change this to use read and handle paging ourselves in backbone
+			// This will provide better support for the desired nextPage() previousPage() functions
+			var req = stretchr.at(model.url);
+			if (model.stretchrParams) {
+				_.each(model.stretchrParams, function(value, key) {
+					// NOTE : This may need to be changed to set.  set replaces, params adds to an array
+					if (value instanceof Array) {
+						for (var i in value) {
+							req.param(key, value[i]);
+						}
+					} else {
+						req.param(key, value);
+					}
+				});
+			}
+
+			//params are done, make the request
+			req.readAll({onCompleted: function(response) {
 				if (response["~status"] == "200" && response["~data"]) {
 					callback(null, response["~data"]["~items"]);
 				} else {

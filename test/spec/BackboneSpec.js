@@ -204,6 +204,32 @@ describe("Stretchr-Backbone", function() {
 		expect(error).toBeUndefined();
 	});
 
+	it("Should let me set params on collections", function() {
+		stretchr.respond(responses.readAllObjects);
+		collection.stretchr = stretchr;
+		collection.stretchrParams = {"include" : "~parent", "offset" : 100, ":age" : ">21", ":name" : ["Ryan", "Mat"] };
+		collection.url = "collection";
+		collection.fetch();
+		console.log(stretchr.requests);
+		expect(stretchr.requests[0].params.offset[0]).toEqual(100);
+		expect(stretchr.requests[0].params.include[0]).toEqual("~parent");
+		expect(stretchr.requests[0].params[":age"][0]).toEqual(">21");
+		expect(stretchr.requests[0].params[":name"]).toEqual(["Ryan", "Mat"]);
+	});
+
+	it("Should let me set params on models", function() {
+		stretchr.respond(responses.readSingleObject);
+		model.stretchr = stretchr;
+		model.stretchrParams = {"include" : "~parent"};
+		model.urlRoot = "users";
+		model.id = "ryan";
+
+		model.fetch();
+
+		expect(stretchr.requests[0].params.include[0]).toEqual("~parent");
+
+	});
+
 	xit("Should call update from within a collection", function() {
 		stretchr.respond(responses.updateObject);
 		collection.stretchr = stretchr;
