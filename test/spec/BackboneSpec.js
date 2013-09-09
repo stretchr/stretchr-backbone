@@ -134,6 +134,7 @@ describe("Stretchr-Backbone", function() {
 		expect(stretchr.requests[0].action).toEqual("create");
 		expect(stretchr.requests[0].path).toEqual("collection");
 		expect(collection.models[0].get("~created")).toEqual(1234);
+		expect(stretchr.requests[0].params["body"]).toBeDefined();
 	});
 
 	it("Should let me delete an object", function() {

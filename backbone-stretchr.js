@@ -111,7 +111,7 @@ Backbone.Stretchr = function() {
 		},
 
 		create: function(model, callback) {
-			stretchr.at(model.url()).body(model.parameters).create(function(response) {
+			stretchr.at(model.url()).body(model.attributes).create(function(response) {
 				if (response["~status"] == 201) {
 					if (response["~changes"]["~deltas"] instanceof Array) {
 						//TODO : Handle creating multiple at once
