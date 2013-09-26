@@ -1,9 +1,10 @@
-/*
+/**
 
-  Stretchr JavaScript SDK
+  Stretchr JavaScript SDK v1.2
   /api/v1.1
 
-  Copyright (c) 2013 Mat Ryer and Tyler Bunnell
+  by Mat Ryer and Ryan Quinn
+  Copyright (c) 2013 Stretchr, Inc.
 
   Please consider promoting this project if you find it useful.
 
@@ -23,604 +24,1325 @@
   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
   DEALINGS IN THE SOFTWARE.
 
-  Special thanks to:
-
-    Jeff Mott for CryptoJS
-    - scroll down for more information
-
 */
 
-/*
-  oo
-  v1.0
-  
-  The worlds simplest JavaScript OO implementation.
-  For if you just need classes, and nothing else.
+/**
+ * @fileOverview A comprehensive client-side JavaScript SDK for HTML5 applications
+ * interacting with Stretchr services.  See the {@link Stretchr} namespace.
+ *
+ * The Stretchr JavaScript SDK was written atop OO - http://github.com/stretchr/oo our
+ * lightweight JavaScript object-orientation library.  See oo documentation for details
+ * on how to use events and properties for the classes within this documentation.
+ *
+ * @name Stretchr JavaScript SDK
+ */
 
-  Copyright (c) 2013 Mat Ryer
-  Please consider promoting this project if you find it useful.
-  Be sure to check out the Licence: https://github.com/stretchrcom/oo#licence
-*/
-var ooreset=function(){var e={version:"1.0",classes:[],classesmap:{},Class:function(t){if(e.classesmap[t]){throw new e.DuplicateClassNameException(t);return null}var n=function(){this.$initialiseBases.apply(this);this.init.apply(this,arguments)};n.prototype.init=function(){};n.$bases={};n.prototype.$initialiseBases=function(){for(var e in this.$class.$bases){var t=this.$class.$bases[e];for(var n in t.prototype){if(typeof t.prototype[n]=="function"){if(n.substr(0,1)!="$"){t.prototype[n]=t.prototype[n].bind(this)}}}}};for(var r=1,i=arguments.length-1;r<i;r++){var s=arguments[r];if(s.$isClass){n.$bases[s.$className]=s;ooextend(s.prototype,n.prototype);n.prototype[s.$className]=s.prototype}else if(typeof s=="object"){ooextend(s,n.prototype)}}if(arguments.length>1){ooextend(arguments[arguments.length-1],n.prototype)}n.toString=function(){return"<{ oo.Class: "+this.$className+" }>"};n.$isClass=true;n.prototype.constructor=n.prototype.$class=n;e.classes[e.classes.length]=n.$className=t;return e.classesmap[t]=n}};e.Exception=e.Class("oo.Exception",{init:function(e){this.message=e},toString:function(){return'<{ oo.Exception: " + message + " }>'}});e.DuplicateClassNameException=e.Class("oo.DuplicateClassNameException",e.Exception,{init:function(e){"Cannot define a class because '"+e+"' already exists."}});return e};var ooextend=function(e,t){for(var n in e){t[n]=e[n]}};var oo=ooreset();var oobind=function(){var e=arguments[0]||null,t=arguments[1]||this,n=[],r=2,i=arguments.length,s;for(;r<i;r++){n.push(arguments[r])}s=function(){var r=[];var s=0;for(s=0,i=n.length;s<i;s++){r.push(n[s])}for(s=0,i=arguments.length;s<i;s++){r.push(arguments[s])}return e.apply(t,r)};s.func=e;s.context=t;s.args=n;return s};Function.prototype.bind=function(){var e=[],t=0,n=arguments.length;e.push(this);for(;t<n;t++){e.push(arguments[t])}return oobind.apply(window,e)}
-
-/*
-  Stretchr is the root namespace for all Stretchr activities.
-*/
+/**
+ * @namespace
+ * @version 1.2
+ */
 var Stretchr = {
 
-  /*
-    apiversion is the default API version.
-  */
-  "apiversion": "v1.1",
+  /** Whether to write out debug information or not. */
+  debug: false,
 
-  /*
-    version is the JavaScript SDK version.
-  */
-  "version": "v1.1.2",
+  /** The SDK version. */
+  version: "1.2",
 
-  /*
-    _context keeps track of request context values.
-  */
-  "_context": 0,
+  /** The default API version this SDK will
+    * attempt to interact with.  You can modify this on a per Client
+    * basis. */
+  apiVersion: "1.1",
 
-  /*
-    _requests holds an array of outstanding requests.
-  */
-  "_requests": []
+  defaultPageSize: 10,
+
+  // _counter is the internal counter for Stretchr JSONP
+  // requests.
+  _counter: 0,
+
+  ParamKey: "key",
+  ParamCallback: "callback",
+  ParamBody: "body",
+  ParamAlways200: "always200",
+  ParamMethod: "method",
+  ParamOrder: "order",
+  ParamSkip: "skip",
+  ParamLimit: "limit",
+  ParamAuth: "auth",
+
+  PrefixFilterFields: ":",
+
+  MethodGet: "GET",
+  MethodPost: "POST",
+  MethodPatch: "PATCH",
+  MethodDelete: "DELETE",
+  MethodPut: "PUT",
+
+  ResourceKeyId: "~id",
+
+  ResponseKeyStatus: "~status",
+  ResponseKeyData: "~data",
+  ResponseKeyErrors: "~errors",
+  ResponseKeyErrorsMessage: "~message",
+  ResponseKeyContext: "~context",
+
+  ResponseKeyCollectionItems: "~items",
+
+  ResponseKeyDataChanges: "~changes",
+  ResponseKeyChangeInfoCreated: "~created",
+  ResponseKeyChangeInfoUpdated: "~updated",
+  ResponseKeyChangeInfoDeleted: "~deleted",
+  ResponseKeyChangeInfoDeltas: "~deltas",
+
+  SessionKeyLoggedIn: "loggedIn",
+  SessionKeyLoggedInYes: "YES",
+  SessionKeyLoggedInNo: "NO",
+  SessionKeyAuthCode: "auth",
+  SessionKeyUserData: "userdata"
+
+};
+
+/**
+ * Gets the next number in the global counter.
+ */
+Stretchr.counter = function(){
+  return ++Stretchr._counter;
+};
+
+/**
+ * Merges many objects into a new one.  None of the arguments
+ * will be changed, and a fresh POJO is returned containing a shallow
+ * copy of all arguments.
+ */
+Stretchr.merge = function(){
+  var o = {};
+  for (var a in arguments) {
+    var arg = arguments[a];
+    for (var k in arg) o[k] = arg[k];
+  }
+  return o;
 };
 
 /*
-  Tools
-*/
+ * Builds an options map from the specified parameters.  If you pass an object,
+ * it will be returned untouched.  If you pass a function it will be set to the
+ * 'after' field on a new object.
+ */
+Stretchr.fixoptions = function(){
+  if (typeof arguments[0] === "object") {
+    return arguments[0];
+  }
+  return {
+    "after": arguments[0] || null
+  };
+}
 
-/*
-  Surprise, surprise, a function that does nothing!
-
-  Weird eh?  No - it's a nice default for callbacks without having to define
-  loads of empty functions.
-*/
-Stretchr.doNothing = function(){};
-
-/*
-  context() gets a unique context variable.
-*/
-Stretchr.context = function() {
-  return "" + (++Stretchr._context);
+/**
+ * Logs to the console if available and if Stretchr.debug is true, otherwise does nothing.
+ */
+Stretchr.log = function(){
+  if (!Stretchr.debug) return;
+  if (console) {
+    if (arguments[1] === true)
+      console.warn.apply(console, [arguments[0]]);
+    else
+      console.info.apply(console, arguments);
+  }
 }
 
 /*
-  encodeMap encodes the specified map into a sorted URL string.
+  oo
+  v1.3.1
+  github.com/stretchr/oo
+
+  The worlds simplest JavaScript OO implementation.
+  For if you just need cool classes, and nothing else.
+
+  Copyright (c) 2013 Mat Ryer
+  Please consider promoting this project if you find it useful.
+  Be sure to check out the Licence: https://github.com/stretchr/oo#licence
 */
-Stretchr.encodeMap = function(map, encodeValues) {
+eval(function(p,a,c,k,e,r){e=function(c){return(c<a?'':e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):c.toString(36))};if(!''.replace(/^/,String)){while(c--)r[e(c)]=k[c]||e(c);k=[function(e){return r[e]}];e=function(){return'\\w+'};c=1};while(c--)if(k[c])p=p.replace(new RegExp('\\b'+e(c)+'\\b','g'),k[c]);return p}('5 1h=8(){5 k={1u:"1.3.1",10:[],11:{},L:8(c){6(k.11[c]){12 M k.13(c);m G}5 d=8(){6(!4.$14){12 M k.15(c);}4.$14.u(4);4.A.u(4,9)};d.7.A=8(){};d.$U={};d.7.$14=8(){n(5 a p 4.$w.$U){4[a]={};V=4.$w.$U[a].7;n(5 b p V){6(B V[b]==="8"){4[a][b]=V[b].P(4)}}}};5 e=[];n(5 i=1,l=9.o-1;i<l;i++){5 f=9[i];6(f){6(f.$1i){f=f.$1i(d,9)}6(!f)1v;6(f.$1j){d.$U[f.$16]=f;W(f.7,d.7)}y 6(B f=="1w"){W(f,d.7)}6(f.$1k){f.$1k(d,9)}6(f.$X){e.q(f.$X.P(f,d,9))}}y{1l("1x 1m 1y "+f+" 17 1z "+c+" w.")}}6(9.o>1){5 g=9[9.o-1];n(5 h p g){5 j=g[h];6(h.1A(0,1)==="$"){d[h]=j}y{d.7[h]=j}}}d.1n=8(){m"<{ z.L: "+4.$16+" }>"};d.$1j=v;d.7.1B=d.7.$w=d;k.10[k.10.o]=d.$16=c;k.11[c]=d;6(e.o>0){n(5 i p e){e[i]()}}m d}};k.F={$Y:8(c,d){c[d]=(8(){5 b=d;m 8(){6(9.o===1&&B 9[0]=="8"){5 a=[b,9[0]];4.Q.u(4,a)}y{5 a=[b];W(9,a);4.H.u(4,a)}m 4}})()},$X:8(a){a.Q=k.F.Q;a.H=k.F.H;a.Z=k.F.Z;a.18=k.F.18;6(a.7.19){n(5 i p a.7.19){5 b=a.7.19[i];k.F.$Y(a.7,b)}}},Q:8(a,b){4.r=4.r||{};4.r[a]=4.r[a]||[];4.r[a].q(b);m 4},Z:8(a,b){5 c=[];5 d=[a,4];n(5 i=2;i<9.o;i++){c.q(9[i]);d.q(9[i])}6(4.$w&&4.$w.r&&4.$w.r[a]){4.$w.H.u(4.$w,d)}5 e=[];6(4.r&&4.r[a]){e=4.r[a]}6(b&&b[a]){e.q(b[a])}6(e.o>0){n(5 i p e){5 f=e[i];5 g=f.u(4,c);6(g===x){m x}}}},H:8(a){5 b=[a,G];n(5 i=1;i<9.o;i++){b.q(9[i])}m 4.Z.u(4,b)},18:8(a,b){6(4.r&&4.r[a]){n(5 i p 4.r[a]){5 c=4.r[a][i];6(c==b){4.r[a].1C(i,1);m v}}}m x},R:8(a){5 b=9[9.o-1];6(B b!=="8"){12 M k.1a("R","1D 1E 1F 1G 1H 1b 1I 1m 1J.");}5 c=[];n(5 i=1;i<9.o-1;i++){c.q(9[i])}c.1K("1L:"+a);5 d=4.H.u(4,c);6(d===x){m x}d=b();c.q(d);c[0]=a;4.H.u(4,c);m d}};k.C={$X:8(a){6(a.7.I&&B a.7.I.o!="S"){n(5 b p a.7.I){k.C.$D(a.7,a.7.I[b],v,v,G)}}y 6(a.7.I){n(5 b p a.7.I){k.C.$D(a.7,b,v,v,a.7.I[b])}}6(a.7.J&&B a.7.J.o!="S"){n(5 b p a.7.J){k.C.$D(a.7,a.7.J[b],v,x,G)}}y 6(a.7.J){n(5 b p a.7.J){k.C.$D(a.7,b,v,x,a.7.J[b])}}6(a.7.K&&B a.7.K.o!="S"){n(5 b p a.7.K){k.C.$D(a.7,a.7.K[b],x,v,G)}}y 6(a.7.K){n(5 b p a.7.K){k.C.$D(a.7,b,x,v,a.7.K[b])}}},D:8(){5 a=[4];n(5 b p 9){a.q(9[b])}k.C.$D.u(4,a);m 4}};k.C.$D=8(c,d,e,f,g){6(c.Q){6(!c.1c){k.F.$Y(c,"1c")}k.F.$Y(c,d+"1o")}5 h=d;5 i;c.N=c.N||8(a){m"1M"+a};5 j=c.N(d);c.1d=c.1d||8(a,b){6(4.R){4.R("1c",d,4[j],b,8(){4.R(a+"1o",4[j],b,8(){4[4.N(a)]=b}.P(4))}.P(4))}y{4[4.N(a)]=b}m 4};c.1e=c.1e||8(a){m 4[4.N(a)]};c[j]=g||G;6(f!==x){6(f===v){i="1N"+d.1O(0).1P()+d.1Q(1)}y{i=f}c[i]=c[i]||8(a){4.1d(d,a);m 4}}6(e!==x){6(e!==v){h=e}c[h]=c[h]||8(){m 4.1e(d)}}m c};k.E=k.L("z.E",{A:8(a){4.1p=a},1n:8(){m"z.E: \\" + 1p + \\""}});k.13=k.L("z.13",k.E,{A:8(a){4["z.E"].A("1R 1S a w 1T \'"+a+"\' 1U 1V, 1W 1X 1Y w 1Z; e.g. 20."+a)}});k.15=k.L("z.15",k.E,{A:8(a){4["z.E"].A("1q 1r 17 21 a M 22; 23\'t 24 25 1b 26, 27 1b M 28: 5 29 = M "+a+"();")}});k.1a=k.L("z.1a",k.E,{A:8(a,b){4["z.E"].A("1q 1r 17 2a "+a+"; "+b)}});m k};5 1l=8(a){6(1f){6(1f.1s){1f.1s(a)}}};5 W=8(a,b){6(B a.o!=="S"&&B b.o!=="S"){n(5 s p a){b.q(a[s])}}y{n(5 s p a){6(a.2b(s))b[s]=a[s]}}};5 z=1h();5 1t=8(){5 b=9[0]||G,1g=9[1]||4,T=[],i=2,l=9.o,O;n(;i<l;i++){T.q(9[i])}O=8(){5 a=[];5 i=0;n(i=0,l=T.o;i<l;i++){a.q(T[i])}n(i=0,l=9.o;i<l;i++){a.q(9[i])}m b.u(1g,a)};O.2c=b;O.2d=1g;O.2e=T;m O};2f.7.P=8(){5 a=[],i=0,l=9.o;a.q(4);n(;i<l;i++){a.q(9[i])}m 1t.u(2g,a)};',62,141,'||||this|var|if|prototype|function|arguments|||||||||||||return|for|length|in|push|ooevents|||apply|true|class|false|else|oo|init|typeof|Properties|addProperty|Exception|Events|null|fire|properties|getters|setters|Class|new|getPropertyInternalName|bound|bind|on|withEvent|undefined|_args|bases|basePrototype|ooextend|afterClassDefined|addEvent|fireWith|classes|classesmap|throw|DuplicateClassNameException|initialiseBases|IncorrectSyntaxException|className|when|removeCallback|events|IncorrectArgumentsException|the|propertyChanged|setProperty|getProperty|console|_obj|ooreset|beforeInherited|isClass|afterInherited|oowarn|to|toString|Changed|message|Incorrect|syntax|warn|oobind|version|continue|object|Failed|inherit|building|substr|constructor|splice|The|last|argument|must|be|codeblock|execute|unshift|before|_|set|charAt|toUpperCase|slice|Cannot|define|because|already|exists|consider|namespacing|your|names|YourCompany|creating|instance|don|just|call|method|use|keyword|obj|calling|hasOwnProperty|func|context|args|Function|window'.split('|'),0,{}))
 
-  // get the sorted keys
-  var keys = [];
-  for (key in map) {
-    keys.push(key);
+/**
+ * @class
+ * Stretchr.Error is the base class for all Stretchr code errors.  These are
+ * distinct from server errors, in that they will require you to change your code
+ * in order to correct the problem.
+ */
+Stretchr.Error = oo.Class("Stretchr.Error", oo.Properties, {
+  getters: ["error"],
+  toString: function(){
+    return "(" + this.$class.name + ") " + this.error();
   }
-  keys.sort();
+});
 
-  // prepare the encoded string
-  var encodedString = "";
+Stretchr.ErrorAction = oo.Class("Stretchr.ErrorAction", Stretchr.Error, {
+  init: function(message){
+    this._error = message;
+  }
+});
 
-  // for each key, add the sorted values
-  for (key in keys) {
-    var theKey = keys[key];
-    var theValues = map[theKey].sort();
-    for (value in theValues) {
+Stretchr.ErrorActionCollectiveResource = new Stretchr.ErrorAction("URL must refer to a single resource a collection of resources.");
 
-      if (encodeValues) {
-        encodedString += theKey + "=" + Stretchr.encode(theValues[value]) + "&";  
-      } else {
-        encodedString += theKey + "=" + theValues[value] + "&";
-      }
+/** @class
+ * Stretchr.Client represents a client that can be used to interact
+ * with Stretchr services.
+ * @property {string} projectName The name of the Stretchr project that this client will
+ * interact with.
+ * @property {string} apiKey The API key to use  when interacting with
+ * the Stretchr services.
+ * @property {Stretchr.Transport} transport The Transport object to use when making
+ * real requests.
+ */
+Stretchr.Client = oo.Class("Stretchr.Client", oo.Events, oo.Properties, {
 
+  properties: ["projectName", "apiKey", "host", "protocol", "apiVersion", "transport", "sessionStore"],
+
+  init: function(projectName, apiKey){
+
+    this
+      .setProjectName(projectName)
+      .setApiKey(apiKey)
+      .setTransport(new Stretchr.JSONPTransport(this))
+      .setHost(projectName + ".stretchr.com")
+      .setProtocol("http")
+      .setApiVersion(Stretchr.apiVersion)
+      .setSessionStore(new Stretchr.CookieSessionStore())
+    ;
+
+  },
+
+  /**
+   * Starts a new Request for the given path.
+   * @param {string} path The path of the new request.
+   * @memberOf Stretchr.Client.prototype
+  */
+  at: function(path) {
+    var r = new Stretchr.Request(this, path);
+
+    // setup default parameters
+    var params = {};
+
+    // API key
+    params[Stretchr.ParamKey] = this.apiKey();
+
+    // auth
+    if (this.isLoggedIn()) {
+      params[Stretchr.ParamAuth] = this.authCode();
     }
-  }
 
-  return encodedString.slice(0, -1);
-}
-
-/*
-  encode performs a encodeURIComponent plus some extras.
-*/
-Stretchr.encode = function(v) {
-
-  v = encodeURIComponent(v)
-
-  return v
-
-}
-
-/*
-  Making requests
-*/
-
-/*
-  callback gets called when a JSONP request has completed.
-*/
-Stretchr.callback = function(object, context) {
-
-  // find the request that made this call
-  request = Stretchr._requests[context]
-
-  if (request && request.onCompleted) {
-    // trigger the callback
-    request.onCompleted(object)
-  }
-
-}
-
-/*
-  Session
-*/
-
-/*
-  NewSession creates a new Stretchr session with the specified
-  project and keys.
-
-  DEPRECATED in favour of new Stretchr.Session(project, publicKey, privateKey);
-  that we get thanks to oo.
-*/
-Stretchr.NewSession = function(project, publicKey, privateKey){
-  return new Stretchr.Session(project, publicKey, privateKey);
-}
-
-/*
-  Session is the object from which you interact with Stretchr services.
-
-  Create a new session by doing:
-
-    s = Stretchr.NewSession(project, publicKey, privateKey)
-*/
-Stretchr.Session = oo.Class("Stretchr.Session", {
-
-  init: function(project, publicKey, privateKey) {
-    this._project = project
-    this._publicKey = publicKey
-    this._privateKey = privateKey
+    return r.params(params);
   },
 
-  /*
-    go executes the request.
-  */
-  go: function(request){
+  /**
+   * url generates a URL that makes up the request of the specified path.
+   * @param {string} path The relative path of the request.
+   * @memberOf Stretchr.Client.prototype
+   */
+  url: function(path) {
 
-    // get a context for this request
-    context = Stretchr.context();
+    // ensure it has the leading /
+    if (path.substr(0,1) != "/") {
+      path = "/"+path;
+    }
 
-    // set it in the request
-    request.set("context", context);
-
-    // add this request to the _requests array keyed by the context
-    Stretchr._requests[context] = request;
-
-    // make the request
-    this._makeRequest(request);
-
-    // return the context value
-    return context;
-  },
-
-  /*
-    _makeRequest makes an actual HTTP JSONP request.
-  */
-  _makeRequest: function(request) {
-
-    var script = document.createElement('script');
-    script.src = request.signedUrl();
-
-    document.getElementsByTagName('head')[0].appendChild(script);
+    return [this.protocol(), "://", this.host(), "/api/v", this.apiVersion(), path].join("");
 
   },
 
   /*
-    at starts a conversation with Stretchr by specifying the relevant path
-    and returning a Stretchr.Request object which will continue the conversation.
+    Auth
+    --------------------------------------------------------------------------------
   */
-  at: function(path){
-    return Stretchr.NewRequest(this, path)
+
+  /**
+   * Loads a list of supported auth providers from Stretchr.
+   *
+   * On success, will raise the `success` event with a Stretchr.ResourceCollection
+   * containing the providers.
+   * @memberOf Stretchr.Client.prototype
+   */
+  loadAuthProviders: function(options) {
+
+    var $success = options.success;
+    options.success = function(response){
+      if ($success) $success.apply(options, arguments);
+    };
+
+    this.at("~info/authproviders").read(options);
+  },
+
+  /**
+   * Gets whether there is a user logged in or not.
+   * @memberOf Stretchr.Client.prototype
+   */
+  isLoggedIn: function(options) {
+    return this.sessionStore().get(Stretchr.SessionKeyLoggedIn) == Stretchr.SessionKeyLoggedInYes;
+  },
+
+  /**
+   * Gets the URL that the user should be redirected to in order to log in.
+   * @memberOf Stretchr.Client.prototype
+   */
+  loginUrl: function(provider) {
+    return this.at("~auth/" + provider + "/login").rooturl() + "?after=" + location.href;
+  },
+
+  /**
+   * Redirects the browser to the loginUrl() which lets the user log in.
+   * @memberOf Stretchr.Client.prototype
+   */
+  login: function(provider) {
+    location.href = this.loginUrl(provider);
+  },
+
+  /**
+   * Sets the appropriate keys in the sessionStore to log the user in.
+   * @memberOf Stretchr.Client.prototype
+   */
+  doLogin: function(authCode, userData) {
+
+    // set some stuff in the store
+    this.sessionStore()
+      .set(Stretchr.SessionKeyLoggedIn, Stretchr.SessionKeyLoggedInYes)
+      .set(Stretchr.SessionKeyAuthCode, authCode)
+      .set(Stretchr.SessionKeyUserData, JSON.stringify(userData))
+    ;
+
+    return true;
+
+  },
+
+  /**
+   * Logs the user out by removing the necessary keys from the sessionStore.
+   * @memberOf Stretchr.Client.prototype
+   */
+  logout: function(){
+
+    // clear stuff out
+    this.sessionStore()
+      .set(Stretchr.SessionKeyLoggedIn, Stretchr.SessionKeyLoggedInNo)
+      .set(Stretchr.SessionKeyAuthCode, "")
+      .set(Stretchr.SessionKeyUserData, "")
+    ;
+
+    return true;
+  },
+
+  /**
+   * Gets the auth code of the currently logged in user.
+   * @memberOf Stretchr.Client.prototype
+   */
+  authCode: function(){
+    return this.sessionStore().get(Stretchr.SessionKeyAuthCode);
+  },
+
+  /**
+   * Gets the data for the currently logged in user.
+   * @memberOf Stretchr.Client.prototype
+   */
+  userData: function(){
+    var v = null;
+    try {
+      eval("v = " + this.sessionStore().get(Stretchr.SessionKeyUserData));
+    } catch(e){}
+    return v;
   }
 
 });
 
+/** @class
+ * Stretchr.Request represents a single request to Stretchr services.
+ * It is recommended that you use the `at` method on Stretchr.Client
+ * instead of constructing this object directly.
+ * @property {Stretchr.Client} client The client to use when making the
+ * request.
+ * @property {string} path The path for this Request.
+ */
+Stretchr.Request = oo.Class("Stretchr.Request", oo.Events, oo.Properties, {
 
-/*
-  Request
-*/
+  properties: ["client", "path", "method"],
 
-/*
-  NewRequest makes a new Stretchr.Request object with the specified session
-  and path.
-*/
-Stretchr.NewRequest = function(session, path) {
-  var request = new(Stretchr.Request);
-  request._path = path;
-  request._session = session;
-  request._params = {
-    "method": ["GET"],
-    "key": [session._publicKey],
-    "always200": [1],
-    "callback": ["Stretchr.callback"]
-  };
-  request._filterparams = {};
-  request._body = null;
-  request._method = "GET"
-  request.onCompleted = Stretchr.doNothing;
-  return request;
-}
-
-
-/*
-  Request represents a complete conversation with Stretchr.
-*/
-Stretchr.Request = oo.Class("Stretchr.Request", {
-
-
-  /*
-    method sets the HTTP Method to use when accessing this request.
-  */
-  method: function(httpMethod) {
-
-    this._params["method"] = [httpMethod]
-    return this;
-
+  init: function(client, path){
+    this
+      .setClient(client)
+      .setPath(path)
+      .setMethod(Stretchr.MethodGet)
+    ;
+    this._params = new Stretchr.Bag(null, Stretchr.Bag.ParamBagOptions);
+    this._where = new Stretchr.Bag(null, Stretchr.merge(Stretchr.Bag.ParamBagOptions, {
+      keyPrefix: Stretchr.PrefixFilterFields
+    }));
   },
 
-  /*
-    body sets the body object for this request.
-  */
-  body: function(body) {
-
-    if (typeof body == "object") {
-      this._body = body;
-    } else if (typeof body == "string") {
-      this._body = eval("(" + body + ")");
+  /**
+   * Gets whether the path of this request referrs to a collection (true), or
+   * to a single resource (false).
+   * @memberOf Stretchr.Request.prototype
+   */
+  isCollective: function(){
+    var p = this.path();
+    if (p.indexOf("/") != 0) {
+      p = "/"+p;
     }
-
-    // set the body parameter
-    if (this.bodystring()) {
-      this._params["body"] = [this.bodystring()];
-    }
-
-    return this;
-
+    return p.split("/").length % 2 == 0;
   },
 
-  /*
-    hasBody gets whether the request has a body or not.
+  /**
+  * Gets or sets parameters.
+  * () = gets all the data
+  * (key) = gets the value for the data with that key
+  * (key, value) = sets the value for the data with that key
+  * ({key:value,key2:value}) = sets the values for the keys in the object
+  * @param {string|object} keyOrObject (optional) Either a string key or an object of multiple key/values
+  * @param {string} value (optional) the value if a string key was provided
+  * @memberOf Stretchr.Request.prototype
   */
-  hasBody: function() {
-    return this._body != null
+  params: function(keyOrObject, value) {
+    var v = this._params.data.apply(this._params, arguments);
+    return v === Stretchr.Bag.NoValue ? this : v;
   },
 
-  /*
-    bodystring gets the JSON string that represents the body.
+  /**
+  * Gets or sets filters.
+  * () = gets all the data
+  * (key) = gets the value for the data with that key
+  * (key, value) = sets the value for the data with that key
+  * ({key:value,key2:value}) = sets the values for the keys in the object
+  * @param {string} keyOrObject (optional) Either a string key or an object of multiple key/values
+  * @param {string} value (optional) the value if a string key was provided
+  * @memberOf Stretchr.Request.prototype
   */
-  bodystring: function(){
-    if (!this._body) { return null; }
-    return JSON.stringify(this._body)
+  where: function(keyOrObject, value) {
+    var v = this._where.data.apply(this._where, arguments);
+    return v === Stretchr.Bag.NoValue ? this : v;
   },
 
-  /*
-    set sets a parameter in the Request and removed any existing
-    parameters with the same key.
-  */
-  set: function(key, value) {
-
-    // set the value
-    this._params[key] = [value];
-
-    // chain
-    return this;
-
+  /**
+   * Gets the querystring segment for this request.
+   * @memberOf Stretchr.Request.prototype
+   */
+  querystring: function(){
+    return Stretchr.Bag.querystring(this._params, this._where);
   },
 
-  /*
-    param sets a parameter to the Request.
-  */
-  param: function(key, value) {
-
-    this._params[key] = this._params[key] || [];
-    this._params[key].push(value);
-
-    // chain
-    return this;
+  /**
+   * Gets the absolute URL (by consulting the Client) for the current
+   * path of this Request.
+   * @memberOf Stretchr.Request.prototype
+   */
+  url: function(){
+    var qs = this.querystring();
+    return this.rooturl() + (qs != "" ? "?"+qs : "");
   },
 
-  /*
-    where sets a filter parameter in the Request.
-  */
-  where: function(key, value) {
-
-    // add the prefix
-    key = ":" + key;
-
-    this._filterparams[key] = this._filterparams[key] || [];
-    this._filterparams[key].push(value);
-
-    // chain
-    return this;
-
+  rooturl: function(){
+    return this.client().url(this.path());
   },
 
-  /*
-    allParamsString gets an encoded URL string of all the parameters ordered
-    by key first, then value.
-  */
-  allParamsString: function(encodeValues) {
-
-    var allParams = {}
-
-    for (key in this._params) {
-      allParams[key] = this._params[key]
-    }
-    for (key in this._filterparams) {
-      allParams[key] = this._filterparams[key]
-    }
-
-    return Stretchr.encodeMap(allParams, encodeValues)
-
+  toString: function(){
+    return this.method() + " " + this.url();
   },
 
-  /*
-    safeUrl generates an absolute URL from the properties in this request which is safe,
-    i.e. contains no sensitive data (like private key).
-  */
-  safeUrl: function(encodeValues) {
+  /**
+   * Gets or sets the body for this request.  body() gets the body, body(newBody) sets it.
+   * @memberOf Stretchr.Request.prototype
+   */
+  body: function() {
+    if (arguments.length === 1) {
 
-    // ensure we do not send sensitive information
-    delete this._params["private"]
-    delete this._params["bodyhash"]
+      var data = arguments[0];
 
-    return this.url(encodeValues)
-
-  },
-
-  /*
-    url generates an absolute URL from the properties in this request
-  */
-  url: function(encodeValues) {
-    return ["http://", this._session._project, ".stretchr.com/api/", Stretchr.apiversion, "/", this._path, "?", this.allParamsString(encodeValues)].join("")
-  },
-
-  /*
-    stringToSign gets the string that should be signed for security purposes.
-  */
-  stringToSign: function(){
-
-    // add the private key
-    this._params["private"] = [this._session._privateKey]
-
-    var stringToSign = [this._method, "&", this.url()].join("")
-    return stringToSign
-
-  },
-
-  /*
-    signature gets the security hash that should be sent along with this request.
-  */
-  signature: function(){
-    return Stretchr.hash(this.stringToSign())
-  },
-
-  /*
-    signedUrl gets the actual URL of the request to make, with the sign parameter added.
-  */
-  signedUrl: function(){
-
-    signature = this.signature()
-    
-    // set the body string
-    if (this.bodystring()) {
-      this._params["body"] = [this.bodystring()];
-    }
-
-    /*
-    for (var key in this._params) {
-      for (var valI in this._params[key]) {
-        this._params[key][valI] = Stretchr.encode(this._params[key][valI]);
+      // extract data from resource
+      if (data.$class === Stretchr.Resource) {
+        data = data.data();
       }
-    }
-    */
 
-    return [this.safeUrl(true), "&sign=", signature].join("")
+      // setter
+      this._body = data;
+
+      return this;
+    }
+    return this._body;
+  },
+
+  /**
+   * Gets whether this request has a body or not.
+   * @memberOf Stretchr.Request.prototype
+   */
+  hasBody: function(){
+    return this._body != null;
+  },
+
+  /**
+   * Gets the body as a JSON string.  Useful for JSONP requests that need to put
+   * the body into a URL query parameter.
+   * @memberOf Stretchr.Request.prototype
+   */
+  bodystr: function(){
+    return JSON.stringify(this._body);
+  },
+
+  /*
+    Parameters
+    ----------------------------------------------------------------
+  */
+
+  /**
+   * Sets the order parameter for the request.
+   * @param {string} value The field(s) to order by.
+   * @memberOf Stretchr.Request.prototype
+   */
+  order: function(value) {
+    this._params.set(Stretchr.ParamOrder, value, true);
+    return this;
+  },
+
+  /**
+   * Sets the skip parameter for the request which indicates the number of
+   * resources to skip.  It is recommended that you use the page() method instead.
+   * @param {number} value The number of resources to skip.
+   * @memberOf Stretchr.Request.prototype
+   */
+  skip: function(value) {
+    this._params.set(Stretchr.ParamSkip, value, true);
+    return this;
+  },
+
+  /**
+   * Sets the limit parameter for the request which indicates the number of
+   * resources to return.  It is recommended that you use the page() method instead.
+   * @param {number} value The number of resources to return.
+   * @memberOf Stretchr.Request.prototype
+   */
+  limit: function(value) {
+    this._params.set(Stretchr.ParamLimit, value, true);
+    return this;
+  },
+
+  /**
+   * Sets the page of resources to get.
+   * @param {number} page The number page to get (starting at 1)
+   * @param {number} pageSize (optional) The number of items to return per page.  Default: 10.
+   * @memberOf Stretchr.Request.prototype
+   */
+  page: function(page, pageSize) {
+    pageSize = pageSize || Stretchr.defaultPageSize;
+    return this.skip(pageSize*(page-1)).limit(pageSize);
   },
 
   /*
     Actions
+    ----------------------------------------------------------------
   */
 
-  read: function(completed){
-    this.onCompleted = completed || Stretchr.doNothing;
-    this._session.go(this.method("GET"));
-    return this; // chain
+  /**
+   * Performs a read request.
+   * @param {object} options The options to use when making the request.
+   * @memberOf Stretchr.Request.prototype
+   */
+  read: function(options){
+    this.setMethod(Stretchr.MethodGet).client().transport().makeRequest(this, options);
+    return this;
   },
 
-  update: function(completed){
-    this.onCompleted = completed || Stretchr.doNothing;
-    this._session.go(this.method("PUT"));
-    return this; // chain
-  },
+  /**
+   * Creates the specified resource.
+   * @param {object} options The options to use when making the request.
+   * @param {object|Stretchr.Resource} data Either a POJO of the data to create, or an existing Stretchr.Resource.
+   * @memberOf Stretchr.Request.prototype
+   */
+  create: function(data, options) {
 
-  replace: function(completed){
-    this.onCompleted = completed || Stretchr.doNothing;
-    this._session.go(this.method("POST"));
-    return this; // chain
-  },
-
-  create: function(completed){
-    this.onCompleted = completed || Stretchr.doNothing;
-    this._session.go(this.method("POST"));
-    return this; // chain
-  },
-
-  remove: function(completed){
-    this.onCompleted = completed || Stretchr.doNothing;
-    this._session.go(this.method("DELETE"));
-    return this; // chain
-  },
-
-  readAll: function(options) {
-
-    var reader = this._newMultiplePageReader();
-    for (var key in options) {
-      reader[key] = options[key];
+    if (this.isCollective()) {
+      // e.g.  POST /people
+      this.setMethod(Stretchr.MethodPost);
+    } else {
+      // e.g.  PUT /people/123
+      this.setMethod(Stretchr.MethodPut);
     }
 
-    // start reading
-    reader.readAll(options);
+    this.body(data).client().transport().makeRequest(this, options);
+
+    return this;
   },
 
-  /*
-    Reading multiple pages
-  */
-  _newMultiplePageReader: function(){
-    return new Stretchr.MultiplePageReader(this);
+  /**
+   * Replaces an entire resource.
+   * @param {object} options The options to use when making the request.
+   * @param {object|Stretchr.Resource} data Either a POJO of the data to create, or an existing Stretchr.Resource.
+   * @memberOf Stretchr.Request.prototype
+   */
+  replace: function(data, options) {
+
+    if (this.isCollective()) throw Stretchr.ErrorActionCollectiveResource;
+
+    this.body(data).setMethod(Stretchr.MethodPost).client().transport().makeRequest(this, options);
+    return this;
+  },
+
+  /**
+   * Updates only some fields of a resource.
+   * @param {object} options The options to use when making the request.
+   * @param {object|Stretchr.Resource} data Either a POJO of the data to create, or an existing Stretchr.Resource.
+   * @memberOf Stretchr.Request.prototype
+   */
+  update: function(data, options) {
+
+    if (this.isCollective()) throw Stretchr.ErrorActionCollectiveResource;
+
+    this.body(data).setMethod(Stretchr.MethodPatch).client().transport().makeRequest(this, options);
+    return this;
+  },
+
+  /**
+   * Removes a resource or many resources.
+   * @param {object} options The options to use when making the request.
+   * @param {object|Stretchr.Resource} data Either a POJO of the data to create, or an existing Stretchr.Resource.
+   * @memberOf Stretchr.Request.prototype
+   */
+  remove: function(options) {
+    this.setMethod(Stretchr.MethodDelete).client().transport().makeRequest(this, options);
+    return this;
   }
 
 });
 
-/*
-  Stretchr.MultiplePageReader makes multiple requests to load many pages
-  of data.
-*/
-Stretchr.MultiplePageReader = oo.Class("Stretchr.MultiplePageReader", {
+/** @class
+ * Stretchr.Response represents a repsonse to a single Stretchr.Request.
+ * @property {int} status() The HTTP Status code returned by the server.
+ * @property {bool} success() Whether the request was a success or not.
+ * @property {object} data() The data returned in the response.
+ * @property {array} errors() A list of any errors that occurred.
+ * @property {array} errorMessage() The message from the last error in the errors, or an empty string if there aren't any errors.
+ * @property {Stretchr.Client} client() The client used to generate this Repsonse.
+ * @property {string} context() The client-context returned in the Response.
+ */
+Stretchr.Response = oo.Class("Stretchr.Response", oo.Properties, {
 
-  init: function(request){
+  getters: ["status", "data", "success", "errors", "errorMessage", "context", "client", "request", "path"],
 
+  init: function(client, request, response) {
+
+    this._client = client;
+    this._status = response[Stretchr.ResponseKeyStatus];
+    this._data = response[Stretchr.ResponseKeyData];
+    this._success = this._status >= 200 && this._status <= 299;
+    this._context = response[Stretchr.ResponseKeyContext];
     this._request = request;
-    this._currentPage = -1;
-    this._pageSize = 1000;
-    this._totalCount = -1;
-    this._responses = [];
-    this._items = [];
-    this._interval = 100;
-    this._loadedItemsCount = 0;
+    if (request) this._path = request.path();
+    this._errorMessage = "";
+
+    // collect any errors
+    if (response[Stretchr.ResponseKeyErrors]) {
+      this._errors = [];
+      for (var err in response[Stretchr.ResponseKeyErrors]) {
+        this._errorMessage = response[Stretchr.ResponseKeyErrors][err][Stretchr.ResponseKeyErrorsMessage];
+        this._errors.push(this._errorMessage);
+      }
+    }
 
   },
 
-  /*
-    options:
-      onCompleted: function(){}
-      onProgress: function(repsonse, percentage){}
+  /**
+  * Gets the Stretchr.Resource from the data in this response.
+  * @memberOf Stretchr.Response.prototype
   */
-  readAll: function(options) {
-
-    this.onCompleted = options["onCompleted"] || Stretchr.doNothing;
-    this.onProgress = options["onProgress"] || Stretchr.doNothing;
-
-    this.readNextPage();
-
+  resource: function(){
+    return new Stretchr.Resource(this.client(), this.path(), this.data());
   },
 
-  // readNextPage reads the next page.
-  readNextPage: function(){
-    this._currentPage++;
+  /**
+  * Gets the Stretchr.ResourceCollection from the data in this response.
+  * @memberOf Stretchr.Response.prototype
+  */
+  resources: function(){
+    return new Stretchr.ResourceCollection(this.client(), this.path(), this.data());
+  },
 
-    // set the limit value
-    var request = this._request;
-    var $this = this;
+  /**
+  * Gets the Stretchr.ChangeInfo from the data in this response.
+  * @memberOf Stretchr.Response.prototype
+  */
+  changes: function(){
+    return new Stretchr.ChangeInfo(this.data()[Stretchr.ResponseKeyDataChanges]);
+  }
 
-    request.set("total", 1);
+});
 
-    request
-      .set("limit", this._pageSize)
-      .set("skip", this._pageSize * this._currentPage)
-      .read(function(response){
+/**
+ * Stretchr.ResponseNothingToDo is a constant Stretchr.Response object that is returned
+ * when methods did no actual work (e.g. when you call save() after no data has changed).
+ *
+ * `s of this kind are still considered successful.
+ */
+Stretchr.ResponseNothingToDo = new Stretchr.Response(null, null, {
+  "~status": 200
+});
 
-        if (response["~status"] == 200) {
+/** @class
+ * Stretchr.Resource represents a single resource.
+ * @property {Stretchr.Client} client The client that relates to this resource.
+ * @property {Stretchr.Request} request The request that caused this Response.
+ */
+Stretchr.Resource = oo.Class("Stretchr.Resource", oo.Events, oo.Properties, {
 
-          // do we have a total count?
-          if (response["~data"]["~total"]) {
-            $this._totalCount = response["~data"]["~total"];
-          }
+  getters: ["client", "path"],
 
-          // add the items
-          $this._responses.push(response);
-          for (var i in response["~data"]["~items"]) {
+  init: function(client, path, data) {
+    this._client = client;
+    this._path = path;
+    this._data = new Stretchr.Bag(data);
+  },
 
-            var index = ($this._currentPage * $this._pageSize) + parseInt(i);
-            $this._items[index] = response["~data"]["~items"][i];
-            $this._loadedItemsCount++;
+  /**
+  * Gets or sets data.
+  * () = gets all the data
+  * (key) = gets the value for the data with that key
+  * (key, value) = sets the value for the data with that key
+  * ({key:value,key2:value}) = sets the values for the keys in the object
+  * @param {string|object} keyOrObject (optional) Either a string key or an object of multiple key/values
+  * @param {string} value (optional) the value if a string key was provided
+  * @memberOf Stretchr.Resource.prototype
+  */
+  data: function() {
+    var v = this._data.data.apply(this._data, arguments);
+    return v === Stretchr.Bag.NoValue ? this : v;
+  },
 
-          }
+  /**
+   * Gets whether this resource has an ID or not.
+   * @memberOf Stretchr.Resource.prototype
+   */
+  hasId: function(){
+    return this._data.has(Stretchr.ResourceKeyId);
+  },
 
-          $this._progressPercentage = Math.floor(100 / ($this._totalCount / $this._loadedItemsCount));
+  /**
+   * Gets the ID for this resource, or returned undefined if there is
+   * no ID.  You can use hasId() to see if there is an ID for this resource
+   * before calling id() to get it.
+   * @memberOf Stretchr.Resource.prototype
+   */
+  id: function(){
+    return this.data(Stretchr.ResourceKeyId);
+  },
 
-          // update the progress
-          $this.onProgress(response, $this._progressPercentage);
+  /**
+   * Saves the changes to this resource.
+   * @param {object} options The options to use when saving this resource.
+   * @memberOf Stretchr.Resource.prototype
+   */
+  save: function(options){
 
-          if ($this._loadedItemsCount == $this._totalCount || $this._totalCount <= 0) {
+    if (!this._data.dirty()) {
 
-            // finished
-            $this.onCompleted({
-              "~status": 200,
-              "~data": {
-                "~total": $this._totalCount,
-                "~count": $this._totalCount,
-                "~items": $this._items
-              }
-            });
+      // nothing to save - just return success to the event handlers
+      this.fireWith("success", options, Stretchr.ResponseNothingToDo, null, options);
+      this.fireWith("after", options, Stretchr.ResponseNothingToDo, null, options);
 
-          } else {
+    } else {
 
-            // more pages
-            window.setTimeout(function(){ $this.readNextPage(); }, $this._interval);
+      // something to save
 
-          }
+      var request = this._client.at(this.path());
+      options.$success = options.success;
+      options.success = function(response){
 
-        } else {
+        var changes = response.changes().deltas()[0];
+        this._data.data(changes);
 
-          // finished with error
-          $this.onCompleted(response);
+        // call original method
+        if (options.$success) options.$success.apply(options, arguments);
 
+      }.bind(this);
+
+      if (this.hasId()) {
+
+        // ensure the path contains the ID
+        if (request.isCollective()) {
+          // append the ID to the path
+          request._path += "/" + this.id();
         }
 
-      })
-    ;
+        // update
+        request.update(this._data.delta(), options);
+
+      } else {
+
+        // create
+        request.create(this, options);
+
+      }
+
+    }
+
+    // chaining
+    return this;
 
   }
 
 });
 
-/*
-  Security
-*/
+/** @class
+ * Stretchr.ResourceCollection represents a collection of Stretchr.Resource objects.
+ * @property {Stretchr.Client} client The client that relates to this resource.
+ * @property {array} rawData The raw data that makes up this collection.
+ * @property (array of Stretchr.Resource) items The Resource items that make up this collection.
+ */
+Stretchr.ResourceCollection = oo.Class("Stretchr.ResourceCollection", oo.Properties, {
 
-/*
-  hashSHA1 uses the SHA1 algorithm to hash the specified string.
-*/
-Stretchr.hashSHA1 = function(s) {
-  return CryptoJS.SHA1(s);
-}
+  getters: ["client", "rawData", "items", "path"],
 
-/*
-  hash uses the current hashing function to hash the specified string.
-*/
-Stretchr.hash = Stretchr.hashSHA1;
+  init: function(client, path, data) {
 
-/*
-CryptoJS v3.1.2
-code.google.com/p/crypto-js
-(c) 2009-2013 by Jeff Mott. All rights reserved.
-code.google.com/p/crypto-js/wiki/License
+    this._client = client;
+    this._rawData = data;
+    this._path = path;
+    this._items = [];
 
-© 2009–2013 by Jeff Mott. All rights reserved.
+    // make a Resource for each item
+    var items = data[Stretchr.ResponseKeyCollectionItems];
+    for (var index in items) {
+      this._items.push(new Stretchr.Resource(client, path, items[index]));
+    }
 
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+  },
 
-Redistributions of source code must retain the above copyright notice, this list of conditions, and the following disclaimer.
-Redistributions in binary form must reproduce the above copyright notice, this list of conditions, and the following disclaimer in the documentation or other materials provided with the distribution.
-Neither the name CryptoJS nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS," AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
-*/
-var CryptoJS=CryptoJS||function(e,m){var p={},j=p.lib={},l=function(){},f=j.Base={extend:function(a){l.prototype=this;var c=new l;a&&c.mixIn(a);c.hasOwnProperty("init")||(c.init=function(){c.$super.init.apply(this,arguments)});c.init.prototype=c;c.$super=this;return c},create:function(){var a=this.extend();a.init.apply(a,arguments);return a},init:function(){},mixIn:function(a){for(var c in a)a.hasOwnProperty(c)&&(this[c]=a[c]);a.hasOwnProperty("toString")&&(this.toString=a.toString)},clone:function(){return this.init.prototype.extend(this)}},
-n=j.WordArray=f.extend({init:function(a,c){a=this.words=a||[];this.sigBytes=c!=m?c:4*a.length},toString:function(a){return(a||h).stringify(this)},concat:function(a){var c=this.words,q=a.words,d=this.sigBytes;a=a.sigBytes;this.clamp();if(d%4)for(var b=0;b<a;b++)c[d+b>>>2]|=(q[b>>>2]>>>24-8*(b%4)&255)<<24-8*((d+b)%4);else if(65535<q.length)for(b=0;b<a;b+=4)c[d+b>>>2]=q[b>>>2];else c.push.apply(c,q);this.sigBytes+=a;return this},clamp:function(){var a=this.words,c=this.sigBytes;a[c>>>2]&=4294967295<<
-32-8*(c%4);a.length=e.ceil(c/4)},clone:function(){var a=f.clone.call(this);a.words=this.words.slice(0);return a},random:function(a){for(var c=[],b=0;b<a;b+=4)c.push(4294967296*e.random()|0);return new n.init(c,a)}}),b=p.enc={},h=b.Hex={stringify:function(a){var c=a.words;a=a.sigBytes;for(var b=[],d=0;d<a;d++){var f=c[d>>>2]>>>24-8*(d%4)&255;b.push((f>>>4).toString(16));b.push((f&15).toString(16))}return b.join("")},parse:function(a){for(var c=a.length,b=[],d=0;d<c;d+=2)b[d>>>3]|=parseInt(a.substr(d,
-2),16)<<24-4*(d%8);return new n.init(b,c/2)}},g=b.Latin1={stringify:function(a){var c=a.words;a=a.sigBytes;for(var b=[],d=0;d<a;d++)b.push(String.fromCharCode(c[d>>>2]>>>24-8*(d%4)&255));return b.join("")},parse:function(a){for(var c=a.length,b=[],d=0;d<c;d++)b[d>>>2]|=(a.charCodeAt(d)&255)<<24-8*(d%4);return new n.init(b,c)}},r=b.Utf8={stringify:function(a){try{return decodeURIComponent(escape(g.stringify(a)))}catch(c){throw Error("Malformed UTF-8 data");}},parse:function(a){return g.parse(unescape(encodeURIComponent(a)))}},
-k=j.BufferedBlockAlgorithm=f.extend({reset:function(){this._data=new n.init;this._nDataBytes=0},_append:function(a){"string"==typeof a&&(a=r.parse(a));this._data.concat(a);this._nDataBytes+=a.sigBytes},_process:function(a){var c=this._data,b=c.words,d=c.sigBytes,f=this.blockSize,h=d/(4*f),h=a?e.ceil(h):e.max((h|0)-this._minBufferSize,0);a=h*f;d=e.min(4*a,d);if(a){for(var g=0;g<a;g+=f)this._doProcessBlock(b,g);g=b.splice(0,a);c.sigBytes-=d}return new n.init(g,d)},clone:function(){var a=f.clone.call(this);
-a._data=this._data.clone();return a},_minBufferSize:0});j.Hasher=k.extend({cfg:f.extend(),init:function(a){this.cfg=this.cfg.extend(a);this.reset()},reset:function(){k.reset.call(this);this._doReset()},update:function(a){this._append(a);this._process();return this},finalize:function(a){a&&this._append(a);return this._doFinalize()},blockSize:16,_createHelper:function(a){return function(c,b){return(new a.init(b)).finalize(c)}},_createHmacHelper:function(a){return function(b,f){return(new s.HMAC.init(a,
-f)).finalize(b)}}});var s=p.algo={};return p}(Math);
-(function(){var e=CryptoJS,m=e.lib,p=m.WordArray,j=m.Hasher,l=[],m=e.algo.SHA1=j.extend({_doReset:function(){this._hash=new p.init([1732584193,4023233417,2562383102,271733878,3285377520])},_doProcessBlock:function(f,n){for(var b=this._hash.words,h=b[0],g=b[1],e=b[2],k=b[3],j=b[4],a=0;80>a;a++){if(16>a)l[a]=f[n+a]|0;else{var c=l[a-3]^l[a-8]^l[a-14]^l[a-16];l[a]=c<<1|c>>>31}c=(h<<5|h>>>27)+j+l[a];c=20>a?c+((g&e|~g&k)+1518500249):40>a?c+((g^e^k)+1859775393):60>a?c+((g&e|g&k|e&k)-1894007588):c+((g^e^
-k)-899497514);j=k;k=e;e=g<<30|g>>>2;g=h;h=c}b[0]=b[0]+h|0;b[1]=b[1]+g|0;b[2]=b[2]+e|0;b[3]=b[3]+k|0;b[4]=b[4]+j|0},_doFinalize:function(){var f=this._data,e=f.words,b=8*this._nDataBytes,h=8*f.sigBytes;e[h>>>5]|=128<<24-h%32;e[(h+64>>>9<<4)+14]=Math.floor(b/4294967296);e[(h+64>>>9<<4)+15]=b;f.sigBytes=4*e.length;this._process();return this._hash},clone:function(){var e=j.clone.call(this);e._hash=this._hash.clone();return e}});e.SHA1=j._createHelper(m);e.HmacSHA1=j._createHmacHelper(m)})();
+  /**
+  * Gets the number of resources currently held in this collection.
+  * @memberOf Stretchr.ResourceCollection.prototype
+  */
+  count: function(){
+    return this._items.length;
+  }
+
+});
+
+/** @class
+ * Stretchr.ChangeInfo holds details about changes that were made in response to
+ * a request.
+ * @property {array} rawData The raw data that makes up this collection.
+ */
+Stretchr.ChangeInfo = oo.Class("Stretchr.ChangeInfo", oo.Properties, {
+
+  properties: ["rawData"],
+
+  init: function(data) {
+
+    this.setRawData(data);
+    this._data = new Stretchr.Bag(data);
+
+  },
+
+  /**
+  * Gets the number of resources that were created.
+  * @memberOf Stretchr.ChangeInfo.prototype
+  */
+  created: function(){
+    return this.data(Stretchr.ResponseKeyChangeInfoCreated) || 0;
+  },
+
+  /**
+  * Gets the number of resources that were updated.
+  * @memberOf Stretchr.ChangeInfo.prototype
+  */
+  updated: function(){
+    return this.data(Stretchr.ResponseKeyChangeInfoUpdated) || 0;
+  },
+
+  /**
+  * Gets the number of resources that were deleted.
+  * @memberOf Stretchr.ChangeInfo.prototype
+  */
+  deleted: function(){
+    return this.data(Stretchr.ResponseKeyChangeInfoDeleted) || 0;
+  },
+
+  /**
+  * Gets an array containing data that changed.  The order of the
+  * array reflects the order of the items from the request.
+  * @memberOf Stretchr.ChangeInfo.prototype
+  */
+  deltas: function(){
+    return this.data(Stretchr.ResponseKeyChangeInfoDeltas) || [];
+  },
+
+  /**
+  * Gets or sets data.
+  * () = gets all the data
+  * (key) = gets the value for the data with that key
+  * (key, value) = sets the value for the data with that key
+  * ({key:value,key2:value}) = sets the values for the keys in the object
+  * @param {string|object} keyOrObject (optional) Either a string key or an object of multiple key/values
+  * @param {string} value (optional) the value if a string key was provided
+  * @memberOf Stretchr.Resource.prototype
+  */
+  data: function() {
+    var v = this._data.data.apply(this._data, arguments);
+    return v === Stretchr.Bag.NoValue ? this : v;
+  }
+
+});
+
+/** @class
+ * Stretchr.Transport is the base class for objects capable of communicating
+ * with Stretchr services.
+ * @property {string} host The host where requests will be made to.
+ * @property {string} protocol The protocol to use when making requests (default: 'http')
+ * @property {float} APIVersion The API version to target (default: 1.1)
+ */
+Stretchr.Transport = oo.Class("Stretchr.Transport", oo.Events, oo.Properties, {
+
+  properties: ["client"],
+  events: ["before", "after", "success", "error"],
+
+  init: function(client){
+    this
+      .setClient(client)
+    ;
+  },
+
+  /**
+   * When overidden in a child class, makes a real request using the specified
+   * options.
+   * @memberOf Stretchr.Transport.prototype
+   */
+  makeRequest: function(request, options){
+    throw "Stretchr.Transport.makeRequest: Cannot use abstract Stretchr.Transport class, use a more concrete version instead.  Like Stretchr.JSONPTransport.";
+  }
+
+});
+
+/**
+ * @class
+ * Stretchr.TestTransport is a handy Transport alternative that allows you to easily
+ * write unit tests for your Stretchr service code.  Simply make a TestTransport object,
+ * assign it to the Stretchr.Client that you're using, then override the fakeResponse
+ * method.  See the test/testfiles/request.js test files for examples on how to do this.
+ * (find "transport.fakeResponse" in the code)
+ */
+Stretchr.TestTransport = oo.Class("Stretchr.TestTransport", Stretchr.Transport, oo.Properties, {
+
+  properties: ["requests"],
+
+  /**
+   * makeRequest calls fakeResponse to get a test response and handles it in the
+   * normal way.
+   * @fires before
+   * @fires after
+   * @fires success
+   * @fires error
+   * @memberOf Stretchr.TestTransport.prototype
+   */
+  makeRequest: function(request, options) {
+
+    options = Stretchr.fixoptions(options);
+    this._requests = this._requests || [];
+    this._requests.push(arguments);
+
+    // event: before
+    this.fireWith("before", options, request, options);
+
+    var response = this.fakeResponse(request, options);
+
+    // make the response object
+    var responseObject = new Stretchr.Response(this.client(), request, response);
+
+    if (responseObject.success()) {
+      this.fireWith("success", options, responseObject, response, options);
+    } else {
+      this.fireWith("error", options, responseObject, response, options);
+    }
+
+    // event: after
+    this.fireWith("after", options, responseObject, response, options);
+
+  },
+
+  /**
+   * Override fakeResponse to provide your own responses to the requests.
+   * If you do not override fakeResponse, it will just return a successful
+   * response with no data and no errors.
+   * @memberOf Stretchr.TestTransport.prototype
+   */
+  fakeResponse: function(options){
+    var r = {};
+    r[Stretchr.ResponseKeyStatus] = 200;
+    return r;
+  }
+
+});
+
+/** @class
+ * Stretchr.JSONPTransport is the class for objects capable of communicating
+ * with Stretchr services via JSONP.
+ */
+Stretchr.JSONPTransport = oo.Class("Stretchr.JSONPTransport", Stretchr.Transport, {
+
+  /**
+   * makeRequest makes a JSONP request using the specified options.
+   * @param {string} path The path of the request to make.
+   * @fires before
+   * @fires after
+   * @fires success
+   * @fires error
+   * @memberOf Stretchr.JSONPTransport.prototype
+   */
+  makeRequest: function(request, options) {
+
+    options = Stretchr.fixoptions(options);
+
+    Stretchr.log("<begin> Make JSONP request", true);
+    Stretchr.log(request);
+    Stretchr.log(options);
+
+    // event: before
+    this.fireWith("before", options, request, options);
+
+    // make the callback function
+    var callbackFunctionName = "sc" + Stretchr.counter();
+    window[callbackFunctionName] = (function(){
+
+      return function(response) {
+
+        Stretchr.log("<begin> Received JSONP response", true);
+        Stretchr.log(response);
+
+        // make the response object
+        var responseObject = new Stretchr.Response(this.client(), request, response);
+
+        Stretchr.log(responseObject);
+
+        if (responseObject.success()) {
+          this.fireWith("success", options, responseObject, response, options);
+        } else {
+          this.fireWith("error", options, responseObject, response, options);
+        }
+
+        // event: after
+        this.fireWith("after", options, responseObject, response, options);
+
+        // delete this function
+        window[callbackFunctionName] = null;
+        delete window[callbackFunctionName];
+
+        Stretchr.log("<end>", true);
+
+      }.bind(this);
+
+    }.bind(this))();
+
+    // setup the JSONP stuff for this request
+    request.params(Stretchr.ParamCallback, callbackFunctionName);
+    request.params(Stretchr.ParamAlways200, 1);
+    request.params(Stretchr.ParamMethod, request.method());
+    if (request.hasBody()) {
+      request.params(Stretchr.ParamBody, request.bodystr());
+    }
+
+    // add the script tag (JSONP)
+    var script = document.createElement('script');
+    script.src = request.url();
+    document.getElementsByTagName('head')[0].appendChild(script);
+
+    // save this for test use
+    this.lastCallbackFunctionName = callbackFunctionName;
+
+    Stretchr.log("<end>", true);
+
+  }
+
+});
+
+/** @class
+ * Stretchr.Bag is a container for data.  Whenever data changes, the bag
+ * raises the `change` event, and will become `dirty()` until it is cleaned
+ * with the `clean()` method.
+ * @property {object} data (optional) The initial data to be stored in this bag.
+ * @property {object} options (optional) An object of options.  "valueArrays"
+ * @property {boolean} dirty() Whether the bag is dirty or not.
+ */
+Stretchr.Bag = oo.Class("Stretchr.Bag", oo.Events, oo.Properties, {
+
+  properties: ["dirty"],
+  getters: ["delta"],
+  events: ["change"],
+
+  init: function(data, options){
+    this._data = data || {};
+    this._options = options || {};
+    this._delta = {};
+    this.clean();
+  },
+
+  /**
+   * _set sets the value to the specified key in the data but bypasses
+   * events and clean/dirty considerations.
+   *
+   * It is used internally by set.
+   * @memberOf Stretchr.Bag.prototype
+   */
+  _set: function(key, value, absolute) {
+
+    if (!this._options["valueArrays"]) {
+      this._data[key] = value;
+    } else {
+
+      if (absolute)
+        delete this._data[key];
+
+      if (typeof this._data[key] === "object" && typeof this._data[key].length !== "undefined") {
+        // already an array
+        this._data[key].push(value)
+      } else if (typeof this._data[key] === "undefined") {
+        // no key
+        this._data[key] = [value];
+      }
+
+    }
+
+    this._delta[key] = this._data[key];
+
+  },
+
+  /**
+   * Sets the value to the specified key.
+   * @param {string|Stretchr.bag} key The key to set, or the Stretchr.Bag to merge in.
+   * @param {anything} value The value to assign to key.
+   * @fires change
+   * @memberOf Stretchr.Bag.prototype
+   */
+  set: function(key, value, absolute) {
+
+    // handle set(bag)
+    if (key.$class === Stretchr.Bag) {
+      for (var k in key._data) {
+        this.set(k, key._data[k]);
+      }
+      return this;
+    }
+
+    // handle set(key, value)
+    this.setDirty(true);
+    this.withEvent("change", this._data[key], value, function(){
+      this._set(key, value, absolute);
+    }.bind(this));
+    return this;
+  },
+
+  /**
+   * Gets the value for a specific key, or gets all the data.
+   * @param {string} key (optional) The key whose value should be returned.
+   * @memberOf Stretchr.Bag.prototype
+   */
+  get: function(key) {
+    return key ? this._data[key] : this._data;
+  },
+
+  /**
+   * Gets whether this bag has a value for the specified key or not.
+   * @memberOf Stretchr.Bag.prototype
+   */
+  has: function(key) {
+    return typeof this._data[key] !== "undefined";
+  },
+
+  /**
+   * Cleans the bag - meaning .dirty() will return false until something else
+   * changes.
+   * @memberOf Stretchr.Bag.prototype
+   */
+  clean: function(){
+    this.setDirty(false);
+    this._delta = {}; // reset the delta
+  },
+
+  /**
+  * Abstracts the get/set methods and makes assumptions for you.
+  * - Returns the value if just a key is given
+  * - Returns all if no key or value is given
+  * - Sets the key if a key/value is given
+  * - Sets many keys if an object of keys/values is given
+  * @param {string|object} keyOrObject (optional) States the key that you want to get the value for.
+  * Returns all key/value pairs if none is given
+  * @param {string} value (optional) States the value that should be applied to the above key
+  * @memberOf Stretchr.Bag.prototype
+  */
+  data: function(keyOrObject, value) {
+
+    if (arguments.length == 0) {
+      // data()
+      return this._data;
+    }
+
+    if (typeof keyOrObject != "object" && typeof value != "undefined") {
+
+      // normal setter - data(keystring, value)
+      this.set(keyOrObject, value);
+
+    } else if (typeof keyOrObject != "object") {
+
+      // getter with key - data(keystring)
+      return this.get(keyOrObject);
+
+    } else {
+
+      // set the all the items in the object - data(newData)
+      for (var k in keyOrObject) {
+        this._set(k, keyOrObject[k]);
+      }
+
+    }
+
+    // nothing to return
+    return Stretchr.Bag.NoValue;
+
+  },
+
+  /**
+   * Gets a URL query string representing the data in this map.
+   * @memberOf Stretchr.Bag.prototype
+   */
+  querystring: function(options) {
+
+    var options = Stretchr.merge(this._options, options);
+    var keyPrefix = options["keyPrefix"] || "";
+
+    var items = [];
+    for (var keyI in this._data)
+      for (var valueI in this._data[keyI])
+        items.push(encodeURIComponent(keyPrefix + keyI) + "=" + encodeURIComponent(this._data[keyI][valueI]));
+
+    return items.join("&");
+
+  }
+
+});
+
+/**
+ * NoValue is a special object that gets returned by the Stretchr.Bag.data method
+ * when no value is expected.  If you are writing a wrapper to the data method
+ * that supports chaining (the data method does not) then you should test for
+ * the return being Stretchr.Bag.NoValue, and if so return the object being
+ * chained.  Otherwise, return the
+ */
+Stretchr.Bag.NoValue = {
+  "Stretchr.Bag.NoValue": true
+};
+
+/**
+ * Generates a URL query string representing all the data specified
+ * in all the specified bags.
+ * @memberOf Stretchr.Bag
+ */
+Stretchr.Bag.querystring = function(){
+
+  var segments = [];
+  for (var a in arguments) {
+    var bag = arguments[a];
+    if (bag.$class != Stretchr.Bag) throw "Stretchr.Bag.querystring: Must only pass Stretchr.Bag objects."
+    var qs = bag.querystring();
+    if (qs != "") {
+      segments.push(qs);
+    }
+  }
+
+  return segments.join("&");
+
+};
+
+/**
+ * Stretchr.Bag.ParamBagOptions is a set of options that describe
+ * bag behaviour for URL parameters.  It should be passed in as the
+ * 2nd argument to the Stretchr.Bag consturctor.
+ */
+Stretchr.Bag.ParamBagOptions = {
+  valueArrays: true
+};
+
+/**
+ * @class
+ * CookieSessionStore represents a storage backed by the browsers cookies and is the default
+ * implementation used by clients.
+ */
+Stretchr.CookieSessionStore = oo.Class("Stretchr.CookieSessionStore", oo.Events, oo.Properties, {
+
+  events: ["change"],
+  properties: ["expiryDays"],
+
+  init: function(expiryDays){
+    this._expiryDays = typeof(expiryDays) !== "undefined" ? expiryDays : 28;
+  },
+
+  /**
+   * Sets a value in the store.  Returns this for chaining.
+   * @param {string} key The key to set.
+   * @param {string} value The value to set.
+   * @param {object} options The options to use when saving.
+   * @memberOf Stretchr.CookieSessionStore.prototype
+   */
+  set: function(key, value, options) {
+
+    // set the cookie value
+    Stretchr.setCookie(key, value, this.expiryDays());
+
+    // raise the success event
+    this.fireWith("change", options, key, value);
+
+    // chain
+    return this;
+
+  },
+
+  /**
+   * Gets a value from the store.
+   * @param {string} key The key to get.
+   * @param {object} options The options to use when saving.
+   * @memberOf Stretchr.CookieSessionStore.prototype
+   */
+  get: function(key, options) {
+    return Stretchr.cookie(key);
+  }
+
+});
+
+/**
+ * Gets the value of a cookie.
+ */
+Stretchr.cookie = function(c_name)
+{
+  var c_value = document.cookie;
+  var c_start = c_value.indexOf(" " + c_name + "=");
+  if (c_start == -1)
+    {
+    c_start = c_value.indexOf(c_name + "=");
+    }
+  if (c_start == -1)
+    {
+    c_value = null;
+    }
+  else
+    {
+    c_start = c_value.indexOf("=", c_start) + 1;
+    var c_end = c_value.indexOf(";", c_start);
+    if (c_end == -1)
+    {
+  c_end = c_value.length;
+  }
+  c_value = unescape(c_value.substring(c_start,c_end));
+  }
+  return c_value;
+};
+
+/**
+ * Sets the value of a cookie.
+ */
+Stretchr.setCookie = function(c_name,value,exdays)
+{
+  var exdate=new Date();
+  exdate.setDate(exdate.getDate() + exdays);
+  var c_value=escape(value) + ((exdays==null) ? "" : "; expires="+exdate.toUTCString());
+  document.cookie=c_name + "=" + c_value;
+};

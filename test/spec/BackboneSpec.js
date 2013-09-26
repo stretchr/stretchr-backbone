@@ -1,5 +1,10 @@
 describe("Stretchr-Backbone", function() {
-	var model, collection, stretchr;
+	var model, collection,
+		stretchr = new Stretchr.Client("proj", "key");
+		
+	stretchr.respond = function(body) {
+		
+	}
 
 	var responses = {
 		readSingleObject: {
@@ -63,8 +68,7 @@ describe("Stretchr-Backbone", function() {
 	});
 
 	beforeEach(function() {
-		stretchr = Stretchr.NewTestSession(),
-			model = new Model(),
+		model = new Model(),
 			collection = new Collection();
 	});
 
