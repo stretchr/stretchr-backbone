@@ -1,10 +1,7 @@
 describe("Stretchr-Backbone", function() {
 	var model, collection,
-		stretchr = new Stretchr.Client("proj", "key");
-		
-	stretchr.respond = function(body) {
-		
-	}
+		stretchr = new Stretchr.Client("proj", "key"),
+		transporter;
 
 	var responses = {
 		readSingleObject: {
@@ -70,6 +67,8 @@ describe("Stretchr-Backbone", function() {
 	beforeEach(function() {
 		model = new Model(),
 			collection = new Collection();
+		transporter = new Stretchr.TestTransport();
+		stretchr.setTransport(transporter);
 	});
 
 	it("Should let us set the stretchr object", function() {
@@ -80,19 +79,24 @@ describe("Stretchr-Backbone", function() {
 	});
 
 	it("Should let me save a model", function() {
-		stretchr.respond(responses.readSingleObject);
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.readSingleObject;
+		}
+
 		model.stretchr = stretchr;
 		model.urlRoot = "collection";
 		model.id = "asdf"
 		model.fetch();
 
-		expect(stretchr.requests[0].action).toEqual("read");
-		expect(stretchr.requests[0].path).toEqual("collection/asdf");
+		expect(stretchr.transport().requests()[0][0]["_method"]).toEqual(Stretchr.MethodGet);
+		expect(stretchr.transport().requests()[0][0]["_path"]).toEqual("collection/asdf");
 		expect(model.get("field")).toEqual("value");
 	});
 
 	it("Should trigger a sync method on the model", function() {
-		stretchr.respond(responses.readSingleObject);
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.readSingleObject;
+		}
 		model.stretchr = stretchr;
 		model.urlRoot = "collection";
 		model.id = "asdf";
@@ -105,57 +109,68 @@ describe("Stretchr-Backbone", function() {
 	});
 
 	it("Should let me read ALL objects", function() {
-		stretchr.respond(responses.readAllObjects);
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.readAllObjects;
+		}
 		collection.stretchr = stretchr;
 		collection.url = "collection";
 		collection.fetch();
 
-		expect(stretchr.requests[0].action).toEqual("read");
-		expect(stretchr.requests[0].path).toEqual("collection");
+		expect(stretchr.transport().requests()[0][0]["_method"]).toEqual(Stretchr.MethodGet);
+		expect(stretchr.transport().requests()[0][0]["_path"]).toEqual("collection");
 		expect(collection.size()).toEqual(2);
 		expect(collection.models[0].get("field")).toEqual("value");
 	});
 
 	it("Should let me update an object", function() {
-		stretchr.respond(responses.updateObject);
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.updateObject;
+		}
 		model.stretchr = stretchr;
 		model.urlRoot = "collection";
 		model.id = "asdf";
 		model.set("name", "ryan");
 		model.save();
 
-		expect(stretchr.requests[0].action).toEqual("update");
-		expect(stretchr.requests[0].path).toEqual("collection/asdf");
-		expect(model.get("~updated")).toEqual(1234);
+		expect(stretchr.transport().requests()[0][0]["_method"]).toEqual(Stretchr.MethodPut);
+		expect(stretchr.transport().requests()[0][0]["_path"]).toEqual("collection/asdf");
+		expect(model.get(Stretchr.ResponseKeyChangeInfoUpdated)).toEqual(1234);
+		expect(stretchr.transport().requests()[0][0].params["body"]).toBeDefined();
 	});
 
 	it("Should let me create an object inside collection", function() {
-		stretchr.respond(responses.createObject);
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.createObject;
+		}
 		collection.stretchr = stretchr;
 		collection.url = "collection";
 		collection.create({name: "ryan"});
 
-		expect(stretchr.requests[0].action).toEqual("create");
-		expect(stretchr.requests[0].path).toEqual("collection");
-		expect(collection.models[0].get("~created")).toEqual(1234);
-		expect(stretchr.requests[0].params["body"]).toBeDefined();
+		expect(stretchr.transport().requests()[0][0]["_method"]).toEqual(Stretchr.MethodPost);
+		expect(stretchr.transport().requests()[0][0]["_path"]).toEqual("collection");
+		expect(collection.models[0].get(Stretchr.ResponseKeyChangeInfoCreated)).toEqual(1234);
+		expect(stretchr.transport().requests()[0][0].params["body"]).toBeDefined();
 	});
 
 	it("Should let me delete an object", function() {
-		stretchr.respond(responses.deleteObject);
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.deleteObject;
+		}
 		model.stretchr = stretchr;
 		model.urlRoot = "collection";
 		model.id = "asdf";
 		model.set("name", "ryan");
 		model.destroy();
 
-		expect(stretchr.requests[0].action).toEqual("remove");
-		expect(stretchr.requests[0].path).toEqual("collection/asdf");
+		expect(stretchr.transport().requests()[0][0]["_method"]).toEqual(Stretchr.MethodDelete);
+		expect(stretchr.transport().requests()[0][0]["_path"]).toEqual("collection/asdf");
 	});
 
 	it("Should fire all the correct events for read", function() {
 		//TODO : Check events fired for both collections and models, make sure that request, sync, remove/add, etc... are all fired
-		stretchr.respond(responses.readSingleObject);
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.readSingleObject;
+		}
 		model.stretchr = stretchr;
 		model.urlRoot = "collection";
 		model.id = "asdf";
@@ -176,7 +191,9 @@ describe("Stretchr-Backbone", function() {
 	});
 
 	it("Should fire an error event on errors", function() {
-		stretchr.respond(responses.errorResponse);
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.errorResponse;
+		}
 		model.stretchr = stretchr;
 		model.urlRoot = "collection";
 		model.id = "asdf";
@@ -193,7 +210,9 @@ describe("Stretchr-Backbone", function() {
 	});
 
 	it("Should not fire an error when no error", function() {
-		stretchr.respond(responses.readSingleObject);
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.readSingleObject;
+		}
 		model.stretchr = stretchr;
 		model.urlRoot = "collection";
 		model.id = "asdf";
@@ -210,20 +229,24 @@ describe("Stretchr-Backbone", function() {
 	});
 
 	it("Should let me set params on collections", function() {
-		stretchr.respond(responses.readAllObjects);
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.readAllObjects;
+		}
 		collection.stretchr = stretchr;
 		collection.stretchrParams = {"include" : "~parent", "offset" : 100, ":age" : ">21", ":name" : ["Ryan", "Mat"] };
 		collection.url = "collection";
 		collection.fetch();
 
-		expect(stretchr.requests[0].params.offset[0]).toEqual(100);
+		expect(stretchr.transport().requests()[0][0].params.offset[0]).toEqual(100);
 		expect(stretchr.requests[0].params.include[0]).toEqual("~parent");
 		expect(stretchr.requests[0].params[":age"][0]).toEqual(">21");
 		expect(stretchr.requests[0].params[":name"]).toEqual(["Ryan", "Mat"]);
 	});
 
 	it("Should let me set params on models", function() {
-		stretchr.respond(responses.readSingleObject);
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.readSingleObject;
+		}
 		model.stretchr = stretchr;
 		model.stretchrParams = {"include" : "~parent"};
 		model.urlRoot = "users";

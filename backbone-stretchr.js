@@ -58,13 +58,13 @@ Backbone.Stretchr = function() {
 			}
 
 			//params are processed, now let's make the request
-			req.read(function(response) {
-				if (response["~status"] == "200") {
-					//success
-					callback(null, response["~data"]);
-				} else {
-					//failure, just return the whole response!
-					callback(response);
+			req.read({
+				success: function(response) {
+					callback(null, response.data());
+				},
+
+				error: function(response) {
+					callback(response.errorMessage());
 				}
 			});
 		},
@@ -89,49 +89,52 @@ Backbone.Stretchr = function() {
 			}
 
 			//params are done, make the request
-			req.readAll({onCompleted: function(response) {
-				if (response["~status"] == "200" && response["~data"]) {
-					callback(null, response["~data"]["~items"]);
-				} else {
-					//failure, just return the whole response!
-					callback(response);
+			req.read({
+				success: function(response) {
+					callback(null, response.data()[Stretchr.ResponseKeyCollectionItems]);
+				},
+				error: function(response) {
+					callback(response.errorMessage());
 				}
-			}});
+			});
 		},
 
 		update: function(model, callback) {
 			//call an actual update, b/c we want to delete fields if they aren't part of it any longer
-			stretchr.at(model.url()).body(model.parameters).update(function(response) {
-				if (response["~status"] == 200) {
-					callback(null, response["~changes"]["~deltas"]);
-				} else {
-					callback(response);
+			stretchr.at(model.url()).update(model.attributes, {
+				success: function(response) {
+					callback(null, response.changes()[Stretchr.ResponseKeyChangeInfoDeltas]);
+				},
+				error: function(response) {
+					callback(response.errorMessage());
 				}
 			});
 		},
 
 		create: function(model, callback) {
-			stretchr.at(model.url()).body(model.attributes).create(function(response) {
-				if (response["~status"] == 201) {
-					if (response["~changes"]["~deltas"] instanceof Array) {
+			stretchr.at(model.url()).create(model.attributes, {
+				success: function(response) {
+					if (response.changes()[Stretchr.ResponseKeyChangeInfoDeltas] instanceof Array) {
 						//TODO : Handle creating multiple at once
-						callback(null, response["~changes"]["~deltas"][0])
+						callback(null, response.changes()[Stretchr.ResponseKeyChangeInfoDeltas][0])
 					} else {
 						//not an array
-						callback(null, response["~changes"]["~deltas"])
+						callback(null, response.changes()[Stretchr.ResponseKeyChangeInfoDeltas])
 					}
-				} else {
-					callback(response);
+				},
+				error: function(response) {
+					callback(response.errorMessage());
 				}
 			});
 		},
 
 		delete: function(model, callback) {
-			stretchr.at(model.url()).remove(function(response) {
-				if (response["~status"] == 200 && response["~deleted"] == 1) {
+			stretchr.at(model.url()).remove({
+				success: function(response) {
 					callback();
-				} else {
-					callback(response);
+				},
+				error: function(response) {
+					callback(response.errorMessage());
 				}
 			});
 		}
