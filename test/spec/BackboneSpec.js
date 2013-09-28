@@ -237,10 +237,10 @@ describe("Stretchr-Backbone", function() {
 		collection.url = "collection";
 		collection.fetch();
 
-		expect(stretchr.transport().requests()[0][0].params.offset[0]).toEqual(100);
-		expect(stretchr.requests[0].params.include[0]).toEqual("~parent");
-		expect(stretchr.requests[0].params[":age"][0]).toEqual(">21");
-		expect(stretchr.requests[0].params[":name"]).toEqual(["Ryan", "Mat"]);
+		expect(stretchr.transport().requests()[0][0]["_params"].data("offset")[0]).toEqual(100);
+		expect(stretchr.transport().requests()[0][0]["_params"].data("include")[0]).toEqual("~parent");
+		expect(stretchr.transport().requests()[0][0]["_params"].data(":age")[0]).toEqual(">21");
+		expect(stretchr.transport().requests()[0][0]["_params"].data(":name")).toEqual(["Ryan", "Mat"]);
 	});
 
 	it("Should let me set params on models", function() {

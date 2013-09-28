@@ -49,10 +49,10 @@ Backbone.Stretchr = function() {
 					//handle arrays
 					if (value instanceof Array) {
 						for (var i in value) {
-							req.param(key, value[i]);
+							req.params(key, value[i]);
 						}
 					} else {
-						req.param(key, value);
+						req.params(key, value);
 					}
 				});
 			}
@@ -80,10 +80,10 @@ Backbone.Stretchr = function() {
 					// NOTE : This may need to be changed to set.  set replaces, params adds to an array
 					if (value instanceof Array) {
 						for (var i in value) {
-							req.param(key, value[i]);
+							req.params(key, value[i]);
 						}
 					} else {
-						req.param(key, value);
+						req.params(key, value);
 					}
 				});
 			}
