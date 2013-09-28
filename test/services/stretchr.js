@@ -87,6 +87,7 @@ var Stretchr = {
   ResponseKeyContext: "~context",
 
   ResponseKeyCollectionItems: "~items",
+  ResponseKeyCollectionTotal: "~total",
 
   ResponseKeyDataChanges: "~changes",
   ResponseKeyChangeInfoCreated: "~created",
@@ -240,6 +241,10 @@ Stretchr.Client = oo.Class("Stretchr.Client", oo.Events, oo.Properties, {
     return r.params(params);
   },
 
+  new: function(path, data) {
+    return new Stretchr.Resource(this, path, data);
+  },
+
   /**
    * url generates a URL that makes up the request of the specified path.
    * @param {string} path The relative path of the request.
@@ -362,7 +367,6 @@ Stretchr.Client = oo.Class("Stretchr.Client", oo.Events, oo.Properties, {
     if(this.location().param(Stretchr.UrlParamAuthKey)) {
       this.doLogin(this.location().param(Stretchr.UrlParamAuthKey), this.location().param(Stretchr.UrlParamAuthUser), {noEvents: true});
       this.location().redirect(window.location.pathname);
-      console.log(this.location());
     }
   }
 
@@ -645,6 +649,7 @@ Stretchr.Response = oo.Class("Stretchr.Response", oo.Properties, {
     this._status = response[Stretchr.ResponseKeyStatus];
     this._data = response[Stretchr.ResponseKeyData];
     this._success = this._status >= 200 && this._status <= 299;
+    this._changes = response[Stretchr.ResponseKeyDataChanges];
     this._context = response[Stretchr.ResponseKeyContext];
     this._request = request;
     if (request) this._path = request.path();
@@ -682,7 +687,7 @@ Stretchr.Response = oo.Class("Stretchr.Response", oo.Properties, {
   * @memberOf Stretchr.Response.prototype
   */
   changes: function(){
-    return new Stretchr.ChangeInfo(this.data()[Stretchr.ResponseKeyDataChanges]);
+    return new Stretchr.ChangeInfo(this._changes);
   }
 
 });
@@ -809,13 +814,15 @@ Stretchr.Resource = oo.Class("Stretchr.Resource", oo.Events, oo.Properties, {
  */
 Stretchr.ResourceCollection = oo.Class("Stretchr.ResourceCollection", oo.Properties, {
 
-  getters: ["client", "rawData", "items", "path"],
+  getters: ["client", "rawData", "items", "path", "total", "hasTotal"],
 
   init: function(client, path, data) {
 
     this._client = client;
     this._rawData = data;
     this._path = path;
+    this._hasTotal = typeof(data[Stretchr.ResponseKeyCollectionTotal]) !== "undefined";
+    this._total = data[Stretchr.ResponseKeyCollectionTotal];
     this._items = [];
 
     // make a Resource for each item
@@ -832,6 +839,17 @@ Stretchr.ResourceCollection = oo.Class("Stretchr.ResourceCollection", oo.Propert
   */
   count: function(){
     return this._items.length;
+  },
+
+  /**
+   * Gets the total number of pages given the specified page size.
+   * @memberOf Stretchr.ResourceCollection.prototype
+   */
+  pagecount: function(pageSize){
+    if (!this._hasTotal) {
+      throw "Cannot use pagecount without a total, add .params(\"total\",1) to your request."
+    }
+    return Math.ceil(this.total() / pageSize);
   }
 
 });

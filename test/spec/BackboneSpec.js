@@ -149,7 +149,7 @@ describe("Stretchr-Backbone", function() {
 		expect(stretchr.transport().requests()[0][0]["_method"]).toEqual(Stretchr.MethodPost);
 		expect(stretchr.transport().requests()[0][0]["_path"]).toEqual("collection");
 		expect(collection.models[0].get(Stretchr.ResponseKeyChangeInfoCreated)).toEqual(1234);
-		expect(stretchr.transport().requests()[0][0].params["body"]).toBeDefined();
+		expect(stretchr.transport().requests()[0][0].params("body")).toBeDefined();
 	});
 
 	it("Should let me delete an object", function() {

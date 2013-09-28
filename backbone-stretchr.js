@@ -123,10 +123,10 @@ Backbone.Stretchr = function() {
 		},
 
 		update: function(model, callback) {
-			//call an actual update, b/c we want to delete fields if they aren't part of it any longer
-			stretchr.at(model.url()).update(model.attributes, {
+			//call a create, b/c we want to delete fields if they aren't part of it any longer, so this will send a put
+			stretchr.at(model.url()).create(model.attributes, {
 				success: function(response) {
-					callback(null, response.changes()[Stretchr.ResponseKeyChangeInfoDeltas]);
+					callback(null, response.changes().data()[Stretchr.ResponseKeyChangeInfoDeltas]);
 				},
 				error: function(response) {
 					callback(response.errorMessage());
@@ -139,10 +139,10 @@ Backbone.Stretchr = function() {
 				success: function(response) {
 					if (response.changes()[Stretchr.ResponseKeyChangeInfoDeltas] instanceof Array) {
 						//TODO : Handle creating multiple at once
-						callback(null, response.changes()[Stretchr.ResponseKeyChangeInfoDeltas][0])
+						callback(null, response.changes().data()[Stretchr.ResponseKeyChangeInfoDeltas][0])
 					} else {
 						//not an array
-						callback(null, response.changes()[Stretchr.ResponseKeyChangeInfoDeltas])
+						callback(null, response.changes().data()[Stretchr.ResponseKeyChangeInfoDeltas])
 					}
 				},
 				error: function(response) {
