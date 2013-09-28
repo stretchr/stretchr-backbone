@@ -64,7 +64,7 @@ Backbone.Stretchr = function() {
 				},
 
 				error: function(response) {
-					callback(response.errorMessage());
+					callback(response.errorMessage() || "unknown error");
 				}
 			});
 		},
@@ -94,7 +94,7 @@ Backbone.Stretchr = function() {
 					callback(null, response.data()[Stretchr.ResponseKeyCollectionItems]);
 				},
 				error: function(response) {
-					callback(response.errorMessage());
+					callback(response.errorMessage() || "unknown error");
 				}
 			});
 		},
@@ -123,7 +123,7 @@ Backbone.Stretchr = function() {
 					}
 				},
 				error: function(response) {
-					callback(response.errorMessage());
+					callback(response.errorMessage() || "unknown error");
 				}
 			});
 		},
@@ -134,7 +134,7 @@ Backbone.Stretchr = function() {
 					callback();
 				},
 				error: function(response) {
-					callback(response.errorMessage());
+					callback(response.errorMessage() || "unknown error");
 				}
 			});
 		}
