@@ -237,6 +237,7 @@ describe("Stretchr-Backbone", function() {
 		collection.url = "collection";
 		collection.fetch();
 
+		//TODO : make the backbone objects support the stretchr "where" system
 		expect(stretchr.transport().requests()[0][0]["_params"].data("offset")[0]).toEqual(100);
 		expect(stretchr.transport().requests()[0][0]["_params"].data("include")[0]).toEqual("~parent");
 		expect(stretchr.transport().requests()[0][0]["_params"].data(":age")[0]).toEqual(">21");
@@ -254,7 +255,7 @@ describe("Stretchr-Backbone", function() {
 
 		model.fetch();
 
-		expect(stretchr.requests[0].params.include[0]).toEqual("~parent");
+		expect(stretchr.transport().requests()[0][0]["_params"].data("include")[0]).toEqual("~parent");
 
 	});
 
