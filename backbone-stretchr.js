@@ -47,10 +47,13 @@ Backbone.Stretchr = function() {
 				model.trigger("request", model, null, options);
 				this[method](model, function(err, res) {
 					if (err) {
-						//TODO : Right now this just returns the raw response in the event of an error, not very useful
 						model.trigger("error", err);
+						if (options && options.error) {
+							options.error(err);
+						}
 					} else {
 						data = res;
+						//FIXME : Looks like backbone doesn't fire sync/error like I thought
 						model.trigger("sync", model, data, options);
 						if (options && options.success) {
 							options.success(data);
