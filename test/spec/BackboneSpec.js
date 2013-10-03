@@ -175,7 +175,7 @@ describe("Stretchr-Backbone", function() {
 		model.urlRoot = "collection";
 		model.id = "asdf";
 
-		var request, sync, success;
+		var request, sync, success, error;
 
 		model.on("request", function() {
 			request = 1;
@@ -188,6 +188,10 @@ describe("Stretchr-Backbone", function() {
 
 		expect(request).toEqual(1);
 		expect(sync).toEqual(1);
+
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.errorResponse;
+		}
 	});
 
 	it("Should fire callbacks for a model", function() {
