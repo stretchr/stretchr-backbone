@@ -184,15 +184,70 @@ describe("Stretchr-Backbone", function() {
 			sync = 1;
 		});
 
+		model.fetch();
+
+		expect(request).toEqual(1);
+		expect(sync).toEqual(1);
+	});
+
+	it("Should fire callbacks for a model", function() {
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.readSingleObject;
+		}
+		model.stretchr = stretchr;
+		model.urlRoot = "collection";
+		model.id = "asdf";
+
+		var success, fail;
+
 		model.fetch({
 			success: function() {
 				success = 1;
 			}
 		});
 
-		expect(request).toEqual(1);
-		expect(sync).toEqual(1);
 		expect(success).toEqual(1);
+
+		//now test errors
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.errorResponse;
+		}
+		model.fetch({
+			error: function() {
+				fail = 1;
+			}
+		});
+		expect(fail).toEqual(1);
+	});
+
+	it("Should fire callbacks for a collection", function() {
+		var success, fail;
+		collection.stretchr = stretchr;
+		collection.url = "collection";
+
+		//test success
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.readAllObjects;
+		}
+
+		collection.fetch({
+			success: function() {
+				success = 1;
+			}
+		});
+
+		expect(success).toEqual(1);
+
+		//now test errors
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.errorResponse;
+		}
+		collection.fetch({
+			error: function() {
+				fail = 1;
+			}
+		});
+		expect(fail).toEqual(1);
 	});
 
 	it("Should fire an error event on errors", function() {
@@ -208,7 +263,6 @@ describe("Stretchr-Backbone", function() {
 		model.on("error", function() {
 			error = 1;
 		});
-
 		model.fetch();
 
 		expect(error).toEqual(1);
