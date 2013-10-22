@@ -143,7 +143,7 @@ Backbone.Stretchr = function() {
 						callback(null, response.changes().data()[Stretchr.ResponseKeyChangeInfoDeltas][0])
 					} else {
 						//not an array
-						callback(null, response.changes().data()[Stretchr.ResponseKeyChangeInfoDeltas])
+						callback(null, response.changes().data()[Stretchr.ResponseKeyChangeInfoDeltas][0])
 					}
 				},
 				error: function(response) {

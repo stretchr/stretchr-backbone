@@ -135,7 +135,8 @@ describe("Stretchr-Backbone", function() {
 		expect(stretchr.transport().requests()[0][0]["_method"]).toEqual(Stretchr.MethodPut);
 		expect(stretchr.transport().requests()[0][0]["_path"]).toEqual("collection/asdf");
 		expect(model.get(Stretchr.ResponseKeyChangeInfoUpdated)).toEqual(1234);
-		expect(stretchr.transport().requests()[0][0].params["body"]).toBeDefined();
+		expect(stretchr.transport().requests()[0][0]["_body"]).toBeDefined();
+		expect(stretchr.transport().requests()[0][0]["_body"]["name"]).toEqual("ryan");
 	});
 
 	it("Should let me create an object inside collection", function() {
@@ -148,8 +149,11 @@ describe("Stretchr-Backbone", function() {
 
 		expect(stretchr.transport().requests()[0][0]["_method"]).toEqual(Stretchr.MethodPost);
 		expect(stretchr.transport().requests()[0][0]["_path"]).toEqual("collection");
+
+		console.log(collection.models[0]);
+
 		expect(collection.models[0].get(Stretchr.ResponseKeyChangeInfoCreated)).toEqual(1234);
-		expect(stretchr.transport().requests()[0][0].params("body")).toBeDefined();
+		expect(stretchr.transport().requests()[0][0]["_body"]).toBeDefined();
 	});
 
 	it("Should let me delete an object", function() {
