@@ -135,6 +135,17 @@ Backbone.Stretchr = function() {
 			});
 		},
 
+		patch: function(model, callback) {
+			stretchr.at(model.url()).update(model.changedAttributes(), {
+				success: function(response) {
+					callback(null, response.changes().data()[Stretchr.ResponseKeyChangeInfoDeltas]);
+				},
+				error: function(response) {
+					callback(response.errorMessage());
+				}
+			})
+		},
+
 		create: function(model, callback) {
 			stretchr.at(model.url()).create(model.attributes, {
 				success: function(response) {

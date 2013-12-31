@@ -326,6 +326,24 @@ describe("Stretchr-Backbone", function() {
 
 	});
 
+	it("Should know how to perform a patch", function() {
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.updateObject;
+		}
+		model = new Model({age: 22});
+		model.stretchr = stretchr;
+		model.urlRoot = "collection";
+		model.id = "asdf";
+		model.save({name: "ryan"}, {patch: true});
+
+		expect(stretchr.transport().requests()[0][0]["_method"]).toEqual(Stretchr.MethodPatch);
+		expect(stretchr.transport().requests()[0][0]["_path"]).toEqual("collection/asdf");
+		expect(model.get(Stretchr.ResponseKeyChangeInfoUpdated)).toEqual(1234);
+		expect(stretchr.transport().requests()[0][0]["_body"]).toBeDefined();
+		expect(stretchr.transport().requests()[0][0]["_body"]["age"]).toBeUndefined();
+		expect(stretchr.transport().requests()[0][0]["_body"]["name"]).toEqual("ryan");
+	});
+
 	xit("Should call update from within a collection", function() {
 		stretchr.respond(responses.updateObject);
 		collection.stretchr = stretchr;
