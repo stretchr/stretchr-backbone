@@ -87,8 +87,8 @@ Backbone.Stretchr = function() {
 					callback(null, response.data());
 				},
 
-				error: function(response) {
-					callback(response.errorMessage() || "unknown error");
+				error: function(response, data) {
+					callback(data || "unknown error");
 				}
 			});
 		},
@@ -117,8 +117,8 @@ Backbone.Stretchr = function() {
 				success: function(response) {
 					callback(null, response.data()[Stretchr.ResponseKeyCollectionItems]);
 				},
-				error: function(response) {
-					callback(response.errorMessage() || "unknown error");
+				error: function(response, data) {
+					callback(data || "unknown error");
 				}
 			});
 		},
@@ -129,8 +129,8 @@ Backbone.Stretchr = function() {
 				success: function(response) {
 					callback(null, response.changes().data()[Stretchr.ResponseKeyChangeInfoDeltas]);
 				},
-				error: function(response) {
-					callback(response.errorMessage());
+				error: function(response, data) {
+					callback(data);
 				}
 			});
 		},
@@ -140,8 +140,8 @@ Backbone.Stretchr = function() {
 				success: function(response) {
 					callback(null, response.changes().data()[Stretchr.ResponseKeyChangeInfoDeltas]);
 				},
-				error: function(response) {
-					callback(response.errorMessage());
+				error: function(response, data) {
+					callback(data);
 				}
 			})
 		},
@@ -157,8 +157,8 @@ Backbone.Stretchr = function() {
 						callback(null, response.changes().data()[Stretchr.ResponseKeyChangeInfoDeltas][0])
 					}
 				},
-				error: function(response) {
-					callback(response.errorMessage() || "unknown error");
+				error: function(response, data) {
+					callback(data || "unknown error");
 				}
 			});
 		},
@@ -168,8 +168,8 @@ Backbone.Stretchr = function() {
 				success: function(response) {
 					callback();
 				},
-				error: function(response) {
-					callback(response.errorMessage() || "unknown error");
+				error: function(response, data) {
+					callback(data || "unknown error");
 				}
 			});
 		}

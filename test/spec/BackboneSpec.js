@@ -51,8 +51,15 @@ describe("Stretchr-Backbone", function() {
 			"~status":200
 		},
 
-		errorResponse: {
+		notFound: {
 			"~status":404
+		},
+
+		badRequest: {
+			"~errors":[
+				{"~message":"HTTP Method not supported."}
+			],
+			"~status":400
 		}
 	}
 
@@ -150,7 +157,6 @@ describe("Stretchr-Backbone", function() {
 		expect(stretchr.transport().requests()[0][0]["_method"]).toEqual(Stretchr.MethodPost);
 		expect(stretchr.transport().requests()[0][0]["_path"]).toEqual("collection");
 
-		console.log(collection.models[0]);
 
 		expect(collection.models[0].get(Stretchr.ResponseKeyChangeInfoCreated)).toEqual(1234);
 		expect(stretchr.transport().requests()[0][0]["_body"]).toBeDefined();
@@ -194,7 +200,7 @@ describe("Stretchr-Backbone", function() {
 		expect(sync).toEqual(1);
 
 		stretchr.transport().fakeResponse = function(request, options) {
-			return responses.errorResponse;
+			return responses.notFound;
 		}
 	});
 
@@ -218,7 +224,7 @@ describe("Stretchr-Backbone", function() {
 
 		//now test errors
 		stretchr.transport().fakeResponse = function(request, options) {
-			return responses.errorResponse;
+			return responses.notFound;
 		}
 		model.fetch({
 			error: function() {
@@ -248,7 +254,7 @@ describe("Stretchr-Backbone", function() {
 
 		//now test errors
 		stretchr.transport().fakeResponse = function(request, options) {
-			return responses.errorResponse;
+			return responses.notFound;
 		}
 		collection.fetch({
 			error: function() {
@@ -260,7 +266,7 @@ describe("Stretchr-Backbone", function() {
 
 	it("Should fire an error event on errors", function() {
 		stretchr.transport().fakeResponse = function(request, options) {
-			return responses.errorResponse;
+			return responses.notFound;
 		}
 		model.stretchr = stretchr;
 		model.urlRoot = "collection";
@@ -342,6 +348,164 @@ describe("Stretchr-Backbone", function() {
 		expect(stretchr.transport().requests()[0][0]["_body"]).toBeDefined();
 		expect(stretchr.transport().requests()[0][0]["_body"]["age"]).toBeUndefined();
 		expect(stretchr.transport().requests()[0][0]["_body"]["name"]).toEqual("ryan");
+	});
+
+	it("Should pass the correct info for all errors", function() {
+		var errors;
+
+		/**
+		 * READ
+		 */
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.notFound;
+		}
+		model.stretchr = stretchr;
+		model.urlRoot = "collection";
+		model.id = "asdf";
+
+		var error;
+
+		model.fetch({
+			error: function(m, err) {
+				errors = err;
+			}
+		});
+		//test 404
+		expect(errors["~status"]).toEqual(404);
+
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.badRequest;
+		}
+
+		model.fetch({
+			error: function(m, err) {
+				errors = err;
+			}
+		});
+
+		// test 400
+		expect(errors["~status"]).toEqual(400);
+		expect(errors["~errors"][0]["~message"]).toEqual("HTTP Method not supported.");
+
+		/*
+		 * READ ALL
+		 */
+
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.notFound;
+		}
+		collection.stretchr = stretchr;
+		collection.url = "collection";
+
+		var error;
+
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.badRequest;
+		}
+
+		collection.fetch({
+			error: function(m, err) {
+				errors = err;
+			}
+		});
+
+		// test 400
+		expect(errors["~status"]).toEqual(400);
+		expect(errors["~errors"][0]["~message"]).toEqual("HTTP Method not supported.");
+
+		/*
+		 * CREATE
+		 */
+		collection.stretchr = stretchr;
+		collection.url = "collection";
+
+		var error;
+
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.badRequest;
+		}
+
+		collection.create({name: "ryan"}, {
+			error: function(m, err) {
+				errors = err;
+			}
+		});
+
+		// test 400
+		expect(errors["~status"]).toEqual(400);
+		expect(errors["~errors"][0]["~message"]).toEqual("HTTP Method not supported.");
+
+		/*
+		 * UPDATE
+		 */
+		model.stretchr = stretchr;
+		model.urlRoot = "collection";
+		model.id = "asdf"
+
+		var error;
+
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.badRequest;
+		}
+
+		model.save({name: "ryan"}, {
+			error: function(m, err) {
+				errors = err;
+			}
+		});
+
+		// test 400
+		expect(errors["~status"]).toEqual(400);
+		expect(errors["~errors"][0]["~message"]).toEqual("HTTP Method not supported.");
+
+		/*
+		 * PATCH
+		 */
+		model.stretchr = stretchr;
+		model.urlRoot = "collection";
+		model.id = "asdf"
+
+		var error;
+
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.badRequest;
+		}
+
+		model.save({name: "ryan"}, {
+			patch: true,
+			error: function(m, err) {
+				errors = err;
+			}
+		});
+
+		// test 400
+		expect(errors["~status"]).toEqual(400);
+		expect(errors["~errors"][0]["~message"]).toEqual("HTTP Method not supported.");
+
+		/*
+		 * DELETE
+		 */
+		model.stretchr = stretchr;
+		model.urlRoot = "collection";
+		model.id = "asdf"
+
+		var error;
+
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.badRequest;
+		}
+
+		model.destroy({
+			patch: true,
+			error: function(m, err) {
+				errors = err;
+			}
+		});
+
+		// test 400
+		expect(errors["~status"]).toEqual(400);
+		expect(errors["~errors"][0]["~message"]).toEqual("HTTP Method not supported.");
+
 	});
 
 	xit("Should call update from within a collection", function() {
