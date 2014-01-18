@@ -1,0 +1,21 @@
+{
+  "name": "stretchr-backbone",
+  "version": "1.0.0",
+  "homepage": "https://github.com/stretchr/stretchr-backbone",
+  "authors": [
+    "Ryan <ryan@stretchr.com>"
+  ],
+  "description": "Backbone adapter for stretchr.com",
+  "main": "backbone-stretchr.js",
+  "keywords": [
+    "backbone",
+    "stretchr"
+  ],
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
