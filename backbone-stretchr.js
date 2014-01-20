@@ -127,7 +127,12 @@ Backbone.Stretchr = function() {
 			//call a create, b/c we want to delete fields if they aren't part of it any longer, so this will send a put
 			stretchr.at(model.url()).create(model.attributes, {
 				success: function(response) {
-					callback(null, response.changes().data()[Stretchr.ResponseKeyChangeInfoDeltas]);
+					var r = response.changes().data()[Stretchr.ResponseKeyChangeInfoDeltas]
+					if (r instanceof Array) {
+						callback(null, r[0]);
+					} else {
+						callback(null, r);
+					}
 				},
 				error: function(response, data) {
 					callback(data);

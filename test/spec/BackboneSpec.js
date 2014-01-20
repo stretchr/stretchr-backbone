@@ -508,6 +508,28 @@ describe("Stretchr-Backbone", function() {
 
 	});
 
+	it("Should catch when an update was actually a create", function() {
+		// updates return an object of deltas, creates return an array of objects of deltas.
+		// Sometimes a create gets sent as an update if the interface is
+		// building up the object before posting it to the server, so we should check for
+		// this on the delta returns
+		model.stretchr = stretchr;
+		model.urlRoot = "collection";
+		model.id = "asdf"
+
+		var error;
+
+		stretchr.transport().fakeResponse = function(request, options) {
+			return responses.createObject;
+		}
+
+		model.save({name: "ryan"});
+
+		// test 400
+		expect(model.get("~created")).toEqual(1234);
+
+	})
+
 	xit("Should call update from within a collection", function() {
 		stretchr.respond(responses.updateObject);
 		collection.stretchr = stretchr;
