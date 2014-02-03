@@ -143,7 +143,12 @@ Backbone.Stretchr = function() {
 		patch: function(model, callback) {
 			stretchr.at(model.url()).update(model.changedAttributes(), {
 				success: function(response) {
-					callback(null, response.changes().data()[Stretchr.ResponseKeyChangeInfoDeltas]);
+					var r = response.changes().data()[Stretchr.ResponseKeyChangeInfoDeltas]
+					if (r instanceof Array) {
+						callback(null, r[0]);
+					} else {
+						callback(null, r);
+					}
 				},
 				error: function(response, data) {
 					callback(data);

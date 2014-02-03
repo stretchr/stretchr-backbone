@@ -28,9 +28,9 @@ describe("Stretchr-Backbone", function() {
 		updateObject: {
 			"~changes":{
 				"~replaced":1,
-				"~deltas": {
+				"~deltas": [{
 					"~updated" : 1234
-				}
+				}]
 			},
 			"~status":200
 		},
