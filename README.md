@@ -12,21 +12,24 @@ Include both the stretchr js sdk and the backbone stretchr library.
 ```
 
 Now define the stretchr object
-```
+
+```javascript
 var stretchr = new Stretchr.Client("account", "project", "key");
 ```
 
 And finally, set it in any of your Backbone Collections and Models that should be persisted to Stretchr.
 
 ## Collection Support
-```
+
+```javascript
 var Collection = Backbone.Collection.extend({
 	stretchr: stretchr
 });
 ```
 
 ## Model Support
-```
+
+```javascript
 var Model = Backbone.Model.extend({
 	idAttribute: "~id",
 	stretchr: stretchr
@@ -38,7 +41,7 @@ And that's it, you're app is now storing and reading data from Stretchr.
 ## Setting Params
 If you would like to take advantage of some of Stretchr's unique features inside of your app, you can do so by setting the stretchrParams for your collection as well.
 
-```
+```javascript
 var Collection = Backbone.Collection.extend({
 	stretchr: stretchr,
 	stretchrParams: {
