@@ -7,7 +7,7 @@ Most Backbone apps can be migrated to stretchr with just a single line in each o
 
 Include both the stretchr js sdk and the backbone stretchr library.
 
-```
+```html
 <script src="js/stretchr.js"></script>
 <script src="js/stretchr-backbone.js"></script>
 ```
